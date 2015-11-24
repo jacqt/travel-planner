@@ -5,7 +5,7 @@
             [cljsjs.jquery]
             [cljs.core.async :refer [put! chan <!]]
             [travel-site.components.dashboard :as dashboard]
-            [travel-site.components.event :as event]
+            [travel-site.components.city :as city]
             [travel-site.components.landing-page :as landing-page]
             [travel-site.utils.http :as http]
             [travel-site.utils.auth :as auth]))
@@ -22,7 +22,7 @@
     (render-state [this _]
       (case (@state :route)
         "home" (om/build dashboard/dashboard-view state)
-        "event" (om/build event/event-view state)
+        "city" (om/build city/city-view state)
         (comment default) (om/build dashboard/dashboard-view state)))))
 
 (defn index-view [state owner]

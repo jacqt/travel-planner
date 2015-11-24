@@ -18,6 +18,7 @@
                  [compojure "1.4.0"]
                  [enlive "1.1.6"]
                  [org.omcljs/om "0.9.0"]
+                 [sablono "0.4.0"]
                  [secretary "1.2.3"]
                  [cljsjs/bootstrap "3.3.5-0"]
                  [cljsjs/bootstrap-timepicker "0.5.1-0"]

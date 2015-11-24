@@ -1,6 +1,6 @@
 (ns travel-site.components.login-signup
   (:require [om.core :as om :include-macros true]
-            [om.dom :as dom :include-macros true]
+            [sablono.core :as html :refer-macros [html]]
             [cljs.core.async :refer [put! chan <!]]
             [travel-site.utils.auth :as auth]
             [travel-site.utils.http :as http]))
@@ -27,13 +27,9 @@
   (reify
     om/IRenderState
     (render-state [this _]
-      (dom/div
-        #js {:className "login-panel"}
-        (dom/div
-          #js {:className "login-component"}
-          (dom/button
-            #js {:onClick (fn [e] (login-to-facebook credentials))
-                 :className "ui primary button"}
-            (dom/i
-              #js {:className "facebook icon"})
-            "Login or signup with Facebook"))))))
+      (html [:div {:class "login-panel"}
+             [:div {:class "login-component"}
+              [:button {:class "ui primary button"
+                        :on-click #(login-to-facebook credentials)}
+               [:i {:class "facebook icon"}]
+               "Login or signup with Facebook"]]]))))

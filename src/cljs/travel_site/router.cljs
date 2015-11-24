@@ -10,9 +10,9 @@
     (swap! app-state assoc :route "home"))
 
   (defroute
-    "/event/:id" [id]
-    (swap! app-state assoc :event {:id id})
-    (swap! app-state assoc :route "event" )))
+    "/city/:id" [id]
+    ;(swap! app-state assoc :id id)
+    (swap! app-state assoc :route "city" )))
 
 ; enable fallback that don't have HTML 5 History
 (secretary/set-config! :prefix "#")
