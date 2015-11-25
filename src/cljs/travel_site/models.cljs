@@ -20,6 +20,7 @@
                                                                        :id 2}] }
                                                             ]
                                          :selected-places []
+                                         :journey {}
                                          :computed-tour []}
                           :cities [{:city-name "London"
                                     :id 1}
