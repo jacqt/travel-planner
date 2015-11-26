@@ -3,6 +3,7 @@
             [sablono.core :as html :refer-macros [html]]
             [cljs.core.async :refer [put! chan <!]]
             [cljs.pprint :refer [pprint]]
+            [travel-site.router :as router]
             [travel-site.utils.inputs :as inputs]
             [travel-site.utils.http :as http]
             [travel-site.models :as models]
@@ -19,7 +20,7 @@
               [:div {:class "field"}
                [:label "Start address"]
                [:div {:class "ui fluid input"}
-                (om/build inputs/address-autocomplete-input [(-> journey :start-attraction)
+                (om/build inputs/address-autocomplete-input [(-> journey :start-place)
                                                              {:edit-key :address
                                                               :coords-key :coords
                                                               :className "start-address-input" ;;TODO - rename className -> class
@@ -27,7 +28,7 @@
               [:div {:class "field"}
                [:label "End address"]
                [:div {:class "ui fluid input"}
-                (om/build inputs/address-autocomplete-input [(-> journey :end-attraction)
+                (om/build inputs/address-autocomplete-input [(-> journey :end-place)
                                                              {:edit-key :address
                                                               :coords-key :coords
                                                               :className "end-address-input" ;; TODO - rename className -> class
@@ -38,8 +39,8 @@
 (defn journey-same? [previous-journey next-journey]
   (and
     (= (-> previous-journey :waypoint-attraction-ids) (-> next-journey :waypoint-attraction-ids))
-    (= (-> previous-journey :start-attraction :coords) (-> next-journey :start-attraction :coords))
-    (= (-> previous-journey :end-attraction :coords) (-> next-journey :end-attraction :coords))))
+    (= (-> previous-journey :start-place :coords) (-> next-journey :start-place :coords))
+    (= (-> previous-journey :end-place :coords) (-> next-journey :end-place :coords))))
 
 (defn extract-goog-waypoint [attraction]
   {:location {:lat (-> attraction :location :coordinates (get 1))
@@ -49,12 +50,12 @@
 (defn update-journey-plan [owner]
   (let [[current-city journey] (om/get-props owner)]
     (when (and
-            (not (empty? (-> journey :start-attraction :coords)))
-            (not (empty? (-> journey :end-attraction :coords))))
+            (not (empty? (-> journey :start-place :coords)))
+            (not (empty? (-> journey :end-place :coords))))
       (.route
         (om/get-state owner :google-directions-service)
-        #js {:origin (-> journey :start-attraction :coords clj->js)
-             :destination (-> journey :end-attraction :coords clj->js)
+        #js {:origin (-> journey :start-place :coords clj->js)
+             :destination (-> journey :end-place :coords clj->js)
              :waypoints (clj->js
                           (map
                             extract-goog-waypoint
@@ -102,6 +103,16 @@
 
 (defn city-view [{:keys [current-city journey]} owner]
   (reify
+    om/IDidUpdate
+    (did-update [_ next-props _]
+      (when-not (journey-same? (:journey (om.core/get-props owner)) (:journey next-props))
+        (router/go-to-hash
+          (http/encode-url-parameters
+            (str "/city/" (-> current-city :city :data :id))
+            {"start-place" (js/JSON.stringify (clj->js (-> (om.core/get-props owner) :journey :start-place)))
+             "end-place" (js/JSON.stringify (clj->js (-> (om.core/get-props owner) :journey :end-place)))
+             "waypoint-attraction-ids[]" (clj->js (-> (om.core/get-props owner) :journey :waypoint-attraction-ids))}))))
+
     om/IRenderState
     (render-state [this _]
       (html [:div {:class "city-view"}

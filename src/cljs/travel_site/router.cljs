@@ -8,11 +8,20 @@
   (:import goog.History))
 
 
+;; TODO remove code duplication here
 (defn process-query-params [app-state query-params]
   (when (some? (:waypoint-attraction-ids query-params))
     (om/update!
       (-> app-state :journey :waypoint-attraction-ids)
       (vec (map int (:waypoint-attraction-ids query-params)))))
+  (when (some? (:start-place query-params))
+    (om/update!
+      (-> app-state :journey :start-place)
+      (js->clj (js/JSON.parse (:start-place query-params)) :keywordize-keys true)))
+  (when (some? (:end-place query-params))
+    (om/update!
+      (-> app-state :journey :end-place)
+      (js->clj (js/JSON.parse (:end-place query-params)) :keywordize-keys true)))
   (om/update! app-state :route "city"))
 
 (defn go-to-hash [new-hash]

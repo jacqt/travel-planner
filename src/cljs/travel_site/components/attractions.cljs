@@ -8,24 +8,14 @@
             [travel-site.utils.http :as http]
             [travel-site.models :as models]))
 
-;; Function reattraction old waypoints. Use this instead of om/update!
-;; because we need to sync the state with our URL
-(defn replace-old-waypoints [old-waypoints new-waypoints]
-  (js/console.log (clj->js new-waypoints))
-  (router/go-to-hash
-    (http/encode-url-parameters
-      (str "/city/" (-> (models/current-city) :city :data :id))
-      {"waypoint-attraction-ids[]" (clj->js new-waypoints)}))
-  (om/update! old-waypoints new-waypoints))
-
 (defn add-waypoint [attraction]
   (let [waypoint-attraction-ids (models/waypoint-attraction-ids)]
     (if-not (contains? (into #{} waypoint-attraction-ids) (:id attraction))
-      (replace-old-waypoints waypoint-attraction-ids (conj waypoint-attraction-ids (:id attraction))))))
+      (om/update! waypoint-attraction-ids (conj waypoint-attraction-ids (:id attraction))))))
 
 (defn remove-waypoint [attraction]
   (let [waypoint-attraction-ids (models/waypoint-attraction-ids)]
-    (replace-old-waypoints waypoint-attraction-ids (vec (filter #(not (= % (:id attraction))) waypoint-attraction-ids)))))
+    (om/update! waypoint-attraction-ids (vec (filter #(not (= % (:id attraction))) waypoint-attraction-ids)))))
 
 (defn attractions->id-to-attraction [attraction-list]
   (reduce (fn [id-to-attraction attraction] (assoc id-to-attraction (:id attraction) attraction)) {} attraction-list))
