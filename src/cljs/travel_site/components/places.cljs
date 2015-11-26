@@ -3,13 +3,24 @@
             [sablono.core :as html :refer-macros [html]]
             [cljs.core.async :refer [put! chan <!]]
             [cljs.pprint :refer [pprint]]
+            [travel-site.router :as router]
             [travel-site.utils.inputs :as inputs]
             [travel-site.utils.http :as http]
             [travel-site.models :as models]))
 
+;; Function replace old waypoints. Use this instead of om/update!
+;; because we need to sync the state with our URL
+(defn replace-old-waypoints [old-waypoints new-waypoints]
+  (js/console.log (clj->js new-waypoints))
+  (router/go-to-hash
+    (http/encode-url-parameters
+      (str "/city/" (:id (models/current-city)))
+      {"waypoint-place-ids[]" (clj->js new-waypoints)}))
+  (om/update! old-waypoints new-waypoints))
+
 (defn add-waypoint [place]
   (let [waypoint-place-ids (models/waypoint-place-ids)]
-    (om/update! waypoint-place-ids (conj waypoint-place-ids (:id place)))))
+    (replace-old-waypoints waypoint-place-ids (conj waypoint-place-ids (:id place)))))
 
 (defn extract-waypoint [place]
   {:location (:location place) 

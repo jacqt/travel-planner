@@ -5,10 +5,8 @@
 
 (enable-console-print!)
 
-(def BASE_URL "http://api.notifsta.com/v1")
-(def LOGIN_URL (str BASE_URL "/auth/facebook"))
-(def USER_URL (str BASE_URL "/user/"))
-(def EVENT_URL (str BASE_URL "/event"))
+(def BASE_URL "http://2384ef71.ngrok.com/api")
+(def CITIES_URL (str BASE_URL "/cities"))
 
 ; parses goog.net.XhrIo response to a json
 (defn parse-xhrio-response [success-callback fail-callback]
@@ -20,43 +18,35 @@
         (let [error (.getLastError target)]
           (fail-callback (js->clj error :keywordize-keys true)))))))
 
+(defn encode-url-parameters [base-url url-params]
+  (reduce
+    (fn [partial-url param-key]
+      (.appendParams
+        goog.uri.utils
+        partial-url
+        (name param-key)
+        (url-params param-key)))
+    base-url
+    (keys url-params)))
+
 ; wraps goog.net.XhrIo library in a simpler function xhr
 (defn xhr [{:keys [method base-url url-params on-complete on-error]}]
   (.send
     goog.net.XhrIo
-    (reduce
-      (fn [partial-url param-key]
-        (.appendParams
-          goog.uri.utils
-          partial-url
-          (name param-key)
-          (url-params param-key)))
-      base-url
-      (keys url-params))
+    (encode-url-parameters base-url url-params)
     (parse-xhrio-response on-complete on-error)
     method))
 
-(defn login [facebook-id facebook-token email on-complete]
+(defn get-all-cities [on-complete]
   (xhr {:method "GET"
-        :base-url LOGIN_URL
-        :url-params {:email email
-                     :facebook_id facebook-id
-                     :facebook_token facebook-token}
+        :base-url CITIES_URL
+        :url-params {}
         :on-complete on-complete
-        :on-error (fn [error] (println "[LOG] Failed to login or signup")) }))
+        :on-error (fn [error] (println "[LOG] Failed to get data for all cities"))}))
 
-(defn get-user [on-complete]
+(defn get-city [city-id on-complete]
   (xhr {:method "GET"
-        :base-url USER_URL
-        :url-params (auth/get-credentials)
+        :base-url (str CITIES_URL "/" city-id)
+        :url-params {}
         :on-complete on-complete
-        :on-error (fn [error] (println "[LOG] Failed to get user info"))}))
-
-(defn get-event [event-id on-complete]
-  (xhr {:method "GET"
-        :base-url EVENT_URL
-        :url-params (merge
-                      {:event-id event-id}
-                      (auth/get-credentials))
-        :on-complete on-complete
-        :on-error (fn [error] (println "[LOG] Failed to get event info"))}))
+        :on-error (fn [error] (println "[LOG] Failed to get data for current city "))}))

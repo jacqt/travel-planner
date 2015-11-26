@@ -12,15 +12,7 @@
         "/me?fields=id,name,email"
         (fn [facebook-profile]
           (js/console.log facebook-profile)
-          (http/login
-            (.. facebook-response -authResponse -userID)
-            (.. facebook-response -authResponse -accessToken)
-            (. facebook-profile -email)
-            (fn [response]
-              (let [new-credentials (:data response)]
-                (auth/set-credentials {:facebook-id (:facebook_id new-credentials)
-                                       :auth-token (:authentication_token new-credentials)})
-                (om/update! credentials (auth/get-credentials))))))))
+          )))
     #js{"scope" "email"}))
 
 (defn login-signup-view [credentials owner]

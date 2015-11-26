@@ -5,7 +5,7 @@
 
 (enable-console-print!)
 (defonce app-state (atom {:credentials (auth/get-credentials)
-                          :route nil
+                          :route "home"
                           :current-city {:city-name "London"
                                          :city-center {:lat 51.51786
                                                        :lng -0.102216}
@@ -33,7 +33,7 @@
                                                                  :coords {}}
                                                    :end-place {:address ""
                                                                :coords {}}
-                                                   :waypoint-place-ids [3]
+                                                   :waypoint-place-ids []
                                                    }
                                          :computed-tour []}
                           :cities [{:city-name "London"
@@ -42,6 +42,9 @@
                                     :id 2}
                                    {:city-name "Paris"
                                     :id 3} ]}))
+
+(defn whole-state []
+  (om/ref-cursor (om/root-cursor app-state)))
 
 (defn cities []
   (om/ref-cursor (:cities (om/root-cursor app-state))))
