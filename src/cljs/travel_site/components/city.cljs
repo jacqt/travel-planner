@@ -5,33 +5,9 @@
             [cljs.pprint :refer [pprint]]
             [travel-site.utils.inputs :as inputs]
             [travel-site.utils.http :as http]
-            [travel-site.models :as models]))
+            [travel-site.models :as models]
+            [travel-site.components.places :as places]))
 
-(defn place-view [place owner]
-  (reify
-    om/IRender
-    (render [_]
-      (html [:div
-             (:place-name place)
-             [:button {:class "ui button"}
-              "Add"]
-             ]))))
-
-(defn place-category-view [category owner]
-  (reify
-    om/IRender
-    (render [_]
-      (html [:div {:class "ui segment place-category-view"}
-             [:h3 (:category-name category)]
-             (om/build-all place-view (:places category))]))))
-
-(defn waypoints-selector-view [place-categories owner]
-  (reify
-    om/IRenderState
-    (render-state [this state]
-      (html [:div
-             [:h2 "Waypoints"]
-             (om/build-all place-category-view place-categories)]))))
 
 (defn places-selector-view [current-city owner]
   (reify
@@ -55,29 +31,32 @@
                                                              :className "end-address-input" ;; TODO - rename className -> class
                                                              :placeholder-text "End address"}])]]
               [:div {:class "field"}
-               (om/build waypoints-selector-view (:place-categories current-city))]]])
-      )
-    )
-  )
+               (om/build places/waypoints-selector-view current-city)]]]))))
 
 (defn journey-same? [previous-journey next-journey]
   (and
+    (= (-> previous-journey :waypoint-place-ids) (-> next-journey :waypoint-place-ids))
     (= (-> previous-journey :start-place :coords) (-> next-journey :start-place :coords))
     (= (-> previous-journey :end-place :coords) (-> next-journey :end-place :coords))))
 
 (defn update-journey-plan [owner]
   (let [current-city (om/get-props owner)]
-    (.route
-      (om/get-state owner :google-directions-service)
-      #js {:origin (-> current-city :journey :start-place :address)
-           :destination (-> current-city :journey :end-place :address)
-           :waypoints (-> current-city :journey :waypoints clj->js)
-           :optimizeWaypoints true
-           :travelMode (.. js/google -maps -TravelMode -DRIVING)}
-      (fn [response, status]
-        (js/console.log response)
-        (when (= status (.. js/google -maps -DirectionsStatus -OK))
-          (.setDirections (om/get-state owner :google-directions-renderer) response))))))
+    (js/console.log (and (not (empty? (-> current-city :journey :start-place :coords))) (not (empty? (-> current-city :journey :end-place :coords)))))
+    (when (and
+            (not (empty? (-> current-city :journey :start-place :coords)))
+            (not (empty? (-> current-city :journey :end-place :coords))))
+      (.route
+        (om/get-state owner :google-directions-service)
+        #js {:origin (-> current-city :journey :start-place :coords clj->js)
+             :destination (-> current-city :journey :end-place :coords clj->js)
+             :waypoints (clj->js 
+                          (places/get-waypoints (-> current-city :journey :waypoint-place-ids) (:places current-city)))
+             :optimizeWaypoints true
+             :travelMode (.. js/google -maps -TravelMode -DRIVING)}
+        (fn [response, status]
+          (js/console.log response)
+          (when (= status (.. js/google -maps -DirectionsStatus -OK))
+            (.setDirections (om/get-state owner :google-directions-renderer) response)))))))
 
 (defn place-map-view [current-city owner]
   (reify
@@ -99,8 +78,8 @@
           (om/set-state! owner :google-directions-renderer google-directions-renderer)
           (update-journey-plan owner))))
 
-    om/IWillUpdate
-    (will-update [_ next-props _]
+    om/IDidUpdate
+    (did-update [_ next-props _]
       (when-not (journey-same? (:journey (om.core/get-props owner)) (:journey next-props))
         (js/console.log "Updating the rendered journey")
         (update-journey-plan owner)))
@@ -121,4 +100,7 @@
                [:div {:class "five wide column"}
                 (om/build places-selector-view current-city)]
                [:div {:class "nine wide column"}
-                (om/build place-map-view current-city)]]]]))))
+                (om/build place-map-view current-city)]]
+              [:div {:class "fourteen wide column row"}
+               [:div {:class "fourteen wide column"}
+                (om/build places/all-places-view [(:place-categories current-city) (:places current-city)])]]]]))))

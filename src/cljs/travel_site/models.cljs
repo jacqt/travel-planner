@@ -11,23 +11,29 @@
                                                        :lng -0.102216}
                                          :id 1
                                          :place-categories [{:category-name "Parks"
-                                                             :id 1
-                                                             :places [{:place-name "Hyde Park"
-                                                                       :location "Hyde Park, London"
-                                                                       :id 1}]}
+                                                             :id 1}
                                                             {:category-name "Restaurants"
-                                                             :id 2
-                                                             :places [{:place-hame "Duck & Waffle"
-                                                                       :location "The Heron Tower, 110 Bishopsgate, London"
-                                                                       :id 1}]}
-                                                            ]
-                                         :selected-places []
+                                                             :id 2}]
+                                         :places [{:place-name "Hyde Park"
+                                                   :category-id 1
+                                                   :description "A beautiful park in London"
+                                                   :location "Hyde Park, London"
+                                                   :id 1}
+                                                  {:place-name "Imperial College"
+                                                   :category-id 1
+                                                   :description "A great college to go to for a relaxing time!"
+                                                   :location "Imperial College, London"
+                                                   :id 3}
+                                                  {:place-name "Duck & Waffle"
+                                                   :category-id 2
+                                                   :description "The tallest restaurant in London!"
+                                                   :location "The Heron Tower, 110 Bishopsgate, London"
+                                                   :id 2} ]
                                          :journey {:start-place {:address ""
                                                                  :coords {}}
                                                    :end-place {:address ""
                                                                :coords {}}
-                                                   :waypoints [{:location "Oxford, UK"
-                                                                :stopover true }]
+                                                   :waypoint-place-ids [3]
                                                    }
                                          :computed-tour []}
                           :cities [{:city-name "London"
@@ -43,5 +49,5 @@
 (defn current-city []
   (om/ref-cursor (:current-city (om/root-cursor app-state))))
 
-(defn current-city-journey-waypoints []
-  (om/ref-cursor (-> (om/root-cursor app-state) :current-city :journey :waypoints)))
+(defn waypoint-place-ids []
+  (om/ref-cursor (-> (om/root-cursor app-state) :current-city :journey :waypoint-place-ids)))

@@ -12,12 +12,6 @@
 
 (defn index-logged-in-view [state owner]
   (reify
-    om/IWillMount
-    (will-mount [this]
-      (http/get-user
-        (fn [response]
-          (let [user (:data response)]
-            (js/console.log user)))))
     om/IRenderState
     (render-state [this _]
       (case (@state :route)
