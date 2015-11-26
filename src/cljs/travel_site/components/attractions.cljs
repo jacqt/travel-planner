@@ -10,7 +10,8 @@
 
 ;; Function reattraction old waypoints. Use this instead of om/update!
 ;; because we need to sync the state with our URL
-(defn reattraction-old-waypoints [old-waypoints new-waypoints]
+(defn replace-old-waypoints [old-waypoints new-waypoints]
+  (js/console.log (clj->js new-waypoints))
   (router/go-to-hash
     (http/encode-url-parameters
       (str "/city/" (-> (models/current-city) :city :data :id))
@@ -19,11 +20,15 @@
 
 (defn add-waypoint [attraction]
   (let [waypoint-attraction-ids (models/waypoint-attraction-ids)]
-    (reattraction-old-waypoints waypoint-attraction-ids (conj waypoint-attraction-ids (:id attraction)))))
+    (if-not (contains? (into #{} waypoint-attraction-ids) (:id attraction))
+      (replace-old-waypoints waypoint-attraction-ids (conj waypoint-attraction-ids (:id attraction))))))
+
+(defn remove-waypoint [attraction]
+  (let [waypoint-attraction-ids (models/waypoint-attraction-ids)]
+    (replace-old-waypoints waypoint-attraction-ids (vec (filter #(not (= % (:id attraction))) waypoint-attraction-ids)))))
 
 (defn attractions->id-to-attraction [attraction-list]
-  (reduce (fn [id-to-attraction attraction] (assoc id-to-attraction (:id attraction) attraction)) {} attraction-list)
-  )
+  (reduce (fn [id-to-attraction attraction] (assoc id-to-attraction (:id attraction) attraction)) {} attraction-list))
 
 (defn get-waypoints [waypoint-attraction-ids attraction-list]
   (let [id-to-attraction (attractions->id-to-attraction attraction-list)]
@@ -44,8 +49,9 @@
              [:h4 (:name waypoint)]
              [:div
               [:p (:description waypoint)]
-              [:i "This is where options go - things like deleting, priorities, etc."]
-              ]
+              [:button {:class "ui basic button"
+                        :on-click #(remove-waypoint waypoint)}
+               "Remove"] ]
              ]))))
 
 (defn waypoints-selector-view [[current-city journey] owner]

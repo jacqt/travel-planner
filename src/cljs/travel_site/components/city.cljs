@@ -105,6 +105,8 @@
     om/IRenderState
     (render-state [this _]
       (html [:div {:class "city-view"}
+             [:pre (print-str current-city)]
+             [:pre (print-str journey)]
              [:h1 (str (-> current-city :city :data :name))]
              [:div {:class "ui centered grid"}
               [:div {:class "fourteen wide column row"}
@@ -115,8 +117,6 @@
               [:div {:class "fourteen wide column row"}
                [:div {:class "fourteen wide column"}
                 (om/build attractions/all-attractions-view [(-> current-city :attraction_categories :data)
-                                                  (-> current-city :attractions :data)])]]
-              [:pre (print-str current-city)]
-              [:pre (print-str journey)]
+                                                            (-> current-city :attractions :data)])]]
               ]]))))
 

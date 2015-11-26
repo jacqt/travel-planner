@@ -34,7 +34,7 @@
                                                        :coords {}}
                                     :end-attraction {:address ""
                                                      :coords {}}
-                                    :waypoint-attraction-ids [] }
+                                    :waypoint-attraction-ids []}
                           :cities [{:city-name "London"
                                     :id 1}
                                    {:city-name "Oxford"
