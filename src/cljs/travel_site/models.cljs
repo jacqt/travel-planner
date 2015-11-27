@@ -10,37 +10,20 @@
                                          :city-center {:lat 0
                                                        :lng 0}
                                          :id -1
-                                         :attraction-categories [{:category-name "Parks"
-                                                                  :id 1}
-                                                                 {:category-name "Restaurants"
-                                                                  :id 2}]
-                                         :attractions [{:name "Hyde Park"
-                                                        :category-id 1
-                                                        :description "A beautiful park in London"
-                                                        :location "Hyde Park, London"
-                                                        :id 1}
-                                                       {:attraction-name "Imperial College"
-                                                        :category-id 1
-                                                        :description "A great college to go to for a relaxing time!"
-                                                        :location "Imperial College, London"
-                                                        :id 3}
-                                                       {:attraction-name "Duck & Waffle"
-                                                        :category-id 2
-                                                        :description "The tallest restaurant in London!"
-                                                        :location "The Heron Tower, 110 Bishopsgate, London"
-                                                        :id 2} ]
-                                         :computed-tour []}
+                                         :attraction-categories []
+                                         :attractions []}
                           :journey {:start-place {:address ""
                                                        :coords {}}
                                     :end-place {:address ""
                                                      :coords {}}
                                     :waypoint-attraction-ids []}
+                          :transit-journey {}
                           :cities [{:city-name "London"
                                     :id 1}
                                    {:city-name "Oxford"
                                     :id 2}
                                    {:city-name "Paris"
-                                    :id 3} ]}))
+                                    :id 3}]}))
 
 (defn whole-state []
   (om/ref-cursor (om/root-cursor app-state)))
@@ -53,3 +36,6 @@
 
 (defn waypoint-attraction-ids []
   (om/ref-cursor (-> (om/root-cursor app-state) :journey :waypoint-attraction-ids)))
+
+(defn transit-journey []
+  (om/ref-cursor (:transit-journey (om/root-cursor app-state))))

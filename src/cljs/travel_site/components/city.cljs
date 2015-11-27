@@ -10,9 +10,44 @@
             [travel-site.models :as models]
             [travel-site.components.attractions :as attractions]))
 
+;; Various util functions
+(def colors ["red" "blue" "yellow" "green" "turquoise" "purple" "cyan" "yellow"])
+
+(defn next-color [index]
+  (get colors (mod index (count colors))))
+
+
+(defn transit-directions-view [transit-directions owner]
+  (reify
+    om/IRender
+    (render [_]
+      (let [directions (-> transit-directions :directions :routes (get 0) :legs (get 0))]
+        (html [:div {:class "transit-directions-view"}
+               [:div {:class "ui header transit-directions-header"}
+                [:div {:class "content"}
+                 (:start_name transit-directions)
+                 [:div {:class "sub header"} (:end_name transit-directions)]]
+                ]
+               [:ul {:class "transit-steps"}
+                (map #(html [:li (:instructions %)])
+                     (:steps directions))]
+               ]))
+      )
+
+    )
+  )
+(defn transit-view [transit-journey owner]
+  (reify
+    om/IRender
+    (render [_]
+      (html [:div {:class "transit-view"}
+             (om/build-all transit-directions-view (map #(js->clj % :keywordize-keys true) transit-journey)) ])
+      )
+    )
+  )
 
 ;; View to edit the current journey (i.e. change start/end locations and remove existing waypoints)
-(defn attractions-selector-view [[current-city journey] owner]
+(defn attractions-selector-view [[current-city journey transit-journey] owner]
   (reify
     om/IRender
     (render [_]
@@ -36,7 +71,9 @@
                                                               :className "end-address-input" ;; TODO - rename className -> class
                                                               :attractionholder-text "End address"}])]]
               [:div {:class "field"}
-               (om/build attractions/waypoints-selector-view [current-city journey])]]]))))
+               (om/build attractions/waypoints-selector-view [current-city journey])]
+              [:div {:class "field"}
+               (om/build transit-view transit-journey)]]]))))
 
 
 ;; Functions for the map view.
@@ -48,31 +85,65 @@
 
 (defn extract-goog-waypoint [attraction]
   {:location {:lat (-> attraction :location :coordinates (get 1))
-              :lng (-> attraction :location :coordinates (get 0)) }
+              :lng (-> attraction :location :coordinates (get 0))}
    :stopover true })
 
-(defn get-transit-directions [response-channel google-driving-directions google-directions-service]
+(defn get-transit-directions [response-channel google-driving-directions waypoints google-directions-service]
   (let [trip-legs (-> google-driving-directions :routes (get 0) :legs)]
     (reduce
-      (fn [partial-directions {:keys [start_location end_location]}]
+      (fn [partial-directions [leg-id {:keys [start_location end_location]}]]
         (.route
           google-directions-service
           #js {:origin start_location
                :destination end_location
                :travelMode (.. js/google -maps -TravelMode -TRANSIT)}
           (fn [response status]
-            (put! response-channel response)
-            )))
+            (js/console.log )
+            (put! response-channel {:leg-id leg-id
+                                    :directions response}))))
       []
-      trip-legs)))
+      (map vector (range) trip-legs))))
 
-(def colors ["red" "blue" "yellow" "green" "turquoise" "purple" "cyan" "yellow"])
+(defn remove-old-renderers [owner]
+  (let [prev-renderers (om/get-state owner :all-renderers)]
+    (if (some? prev-renderers)
+      (reduce
+        (fn [_ renderer]
+          (.setMap renderer nil))
+        nil
+        prev-renderers))))
 
-(defn next-color [index]
-  (get colors (mod index (count colors))))
+(defn gen-new-renderers [owner all-directions]
+  (reduce
+    (fn [renderers [index directions]]
+      (let [renderer (js/google.maps.DirectionsRenderer.
+                       #js {:polylineOptions #js {:strokeColor (next-color index)}})]
+        (.setMap renderer (om/get-state owner :google-map))
+        (.setDirections renderer (clj->js (:directions directions)))
+        (conj renderers renderer)))
+    []
+    (map vector (range) all-directions)))
+
+(defn annotate-directions [start_name end_name waypoints all-directions]
+  (let [all-place-names (vec (flatten (vector start_name (map #(:name %) waypoints) end_name)))]
+    (sort #(compare (:leg-id %1) (:leg-id %2))
+      (reduce
+        (fn [partial-directions next-direction]
+          (conj
+            partial-directions
+            {:start_name (get all-place-names (:leg-id next-direction))
+             :end_name (get all-place-names (inc (:leg-id next-direction)))
+             :leg-id (:leg-id next-direction)
+             :directions (:directions next-direction)}
+            ))
+        []
+        all-directions))))
 
 (defn update-journey-plan [owner]
-  (let [[current-city journey] (om/get-props owner)]
+  (let [[current-city journey] (om/get-props owner)
+        waypoints (attractions/get-waypoints
+                    (-> journey :waypoint-attraction-ids)
+                    (-> current-city :attractions :data)) ]
     (when (and
             (not (empty? (-> journey :start-place :coords)))
             (not (empty? (-> journey :end-place :coords))))
@@ -80,12 +151,7 @@
         (om/get-state owner :google-directions-service)
         #js {:origin (-> journey :start-place :coords clj->js)
              :destination (-> journey :end-place :coords clj->js)
-             :waypoints (clj->js
-                          (map
-                            extract-goog-waypoint
-                            (attractions/get-waypoints
-                              (-> journey :waypoint-attraction-ids)
-                              (-> current-city :attractions :data))))
+             :waypoints (clj->js (map extract-goog-waypoint waypoints))
              :optimizeWaypoints true
              :travelMode (.. js/google -maps -TravelMode -DRIVING)}
         (fn [response status]
@@ -94,36 +160,25 @@
             ;; Potenial problems:
             ;;  * Need to specify start/end times
             ;;  * Timezones will be an issue *sigh*
-            (js/console.log "Here we go!!" response)
             (let [response-channel (chan)
                   response (js->clj response :keywordize-keys true) ]
-              (get-transit-directions response-channel response (om/get-state owner :google-directions-service))
+              (get-transit-directions response-channel response waypoints (om/get-state owner :google-directions-service))
               (go
                 (loop [msg-count (inc (count (-> response :request :waypoints)))
                        partial-directions []]
                   (if (> msg-count 0)
                     (recur (dec msg-count) (conj partial-directions (<! response-channel)))
                     (do
-                      (let [prev-renderers (om/get-state owner :all-renderers)]
-                        (if (some? prev-renderers)
-                          (reduce
-                            (fn [_ renderer]
-                              (.setMap renderer nil))
-                            nil
-                            prev-renderers)))
-
-                      (let [all-renderers (reduce
-                                            (fn [renderers [index directions]]
-                                              (js/console.log "Rendering one leg of the thing")
-                                              (let [renderer (js/google.maps.DirectionsRenderer.
-                                                               #js {:polylineOptions #js {:strokeColor (next-color index)}})]
-                                                (.setMap renderer (om/get-state owner :google-map))
-                                                (.setDirections renderer (clj->js directions))
-                                                (conj renderers renderer)))
-                                            []
-                                            (map vector (range) partial-directions))]
+                      (remove-old-renderers owner)
+                      (let [all-renderers (gen-new-renderers owner partial-directions)]
                         (om/set-state! owner :all-renderers all-renderers)
-                        ))))
+                        (om/update!
+                          (models/transit-journey)
+                          (annotate-directions
+                            (-> journey :start-place :address)
+                            (-> journey :end-place :address)
+                            waypoints
+                            partial-directions))))))
                 ))))))))
 
 (defn attraction-map-view [[current-city journey] owner]
@@ -151,14 +206,13 @@
     om/IDidUpdate
     (did-update [_ [_ next-journey] _]
       (when-not (journey-same? (get (om.core/get-props owner) 1) next-journey)
-        (js/console.log "Updating the rendered journey")
         (update-journey-plan owner)))
 
     om/IRenderState
     (render-state [this state]
       (html [:div {:class "city-map-container"} "This is where the map should go"]))))
 
-(defn city-view [{:keys [current-city journey]} owner]
+(defn city-view [{:keys [current-city journey transit-journey]} owner]
   (reify
     ;; A bit hacky, but register a listener on the root city component whose job is to sync
     ;; changes in the journey state to the url. Not sure of a better way to do it.
@@ -178,11 +232,12 @@
       (html [:div {:class "city-view"}
              [:pre (print-str current-city)]
              [:pre (print-str journey)]
+             [:pre (print-str transit-journey)]
              [:h1 (str (-> current-city :city :data :name))]
              [:div {:class "ui centered grid"}
               [:div {:class "fourteen wide column row"}
                [:div {:class "five wide column"}
-                (om/build attractions-selector-view [current-city journey])]
+                (om/build attractions-selector-view [current-city journey transit-journey])]
                [:div {:class "nine wide column"}
                 (om/build attraction-map-view [current-city journey])]]
               [:div {:class "fourteen wide column row"}
