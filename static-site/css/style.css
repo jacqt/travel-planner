@@ -23,8 +23,17 @@
   height: 500px;
 }
 
+.city-view .all-attractions-view .attraction-card-view {
+  cursor: default !important;
+}
+
 .city-view .all-attractions-view .attraction-card-view .image {
   background-position: 50%;
   background-size: cover;
   height: 200px;
+}
+
+.city-view .transit-view {
+  max-height: 200px;
+  overflow-y: scroll;
 }
