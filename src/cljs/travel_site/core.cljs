@@ -11,7 +11,7 @@
 
 
 (defn main []
-  (router/route-app models/app-state)
+  (router/route-app)
   (secretary/dispatch!
     (.substring (.. js/window -location -hash) 1))
   (om/root

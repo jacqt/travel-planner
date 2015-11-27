@@ -5,7 +5,7 @@
 
 (enable-console-print!)
 
-(def BASE_URL "http://fiberboard.notifsta.com/api")
+(def BASE_URL "http://fiberboard_api.notifsta.com/api")
 (def CITIES_URL (str BASE_URL "/cities"))
 
 ; parses goog.net.XhrIo response to a json
