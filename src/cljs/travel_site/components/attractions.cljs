@@ -8,14 +8,16 @@
             [travel-site.utils.http :as http]
             [travel-site.models :as models]))
 
+(defn attraction-selected? [attraction waypoint-attraction-ids]
+  (contains? waypoint-attraction-ids (:id attraction)))
+
 (defn add-waypoint [attraction]
   (let [waypoint-attraction-ids (models/waypoint-attraction-ids)]
-    (if-not (contains? (into #{} waypoint-attraction-ids) (:id attraction))
-      (om/update! waypoint-attraction-ids (conj waypoint-attraction-ids (:id attraction))))))
+    (om/update! waypoint-attraction-ids (assoc waypoint-attraction-ids (:id attraction) true))))
 
 (defn remove-waypoint [attraction]
   (let [waypoint-attraction-ids (models/waypoint-attraction-ids)]
-    (om/update! waypoint-attraction-ids (vec (filter #(not (= % (:id attraction))) waypoint-attraction-ids)))))
+    (om/update! waypoint-attraction-ids (dissoc waypoint-attraction-ids (:id attraction)))))
 
 (defn attractions->id-to-attraction [attraction-list]
   (reduce (fn [id-to-attraction attraction] (assoc id-to-attraction (:id attraction) attraction)) {} attraction-list))
@@ -28,7 +30,7 @@
           waypoints
           (get id-to-attraction attraction-id)))
       []
-      waypoint-attraction-ids)))
+      (keys waypoint-attraction-ids))))
 
 
 (defn attraction-editor-view [waypoint owner]
@@ -60,13 +62,22 @@
   (reify
     om/IRenderState
     (render-state [this _]
-      (html [:div {:class "ui fluid centered card attraction-card-view"
-                   :on-click #(add-waypoint attraction)}
-             [:div {:class "image"
-                    :style {:background-image (str "url( " (:image_url attraction) " )")}}]
-             [:div {:class "content"}
-              [:div {:class "header"} (:name attraction)]
-              [:div {:class "description"} (:description attraction)]]]))))
+      (let [waypoint-attraction-ids (om/observe owner (models/waypoint-attraction-ids))]
+        (html [:div {:class "ui fluid centered card attraction-card-view"}
+               [:div {:class "image"
+                      :style {:background-image (str "url( " (:image_url attraction) " )")}}]
+               [:div {:class "content"}
+                [:div {:class "header"} (:name attraction)]
+                [:div {:class "description"} (:description attraction)]]
+               [:div {:class "extra content"
+                      :on-click #(add-waypoint attraction)}
+                (if (attraction-selected? attraction waypoint-attraction-ids)
+                  [:div {:class "ui fluid green button"}
+                   [:i {:class "check outline icon"}]
+                   "Added!" ]
+                  [:div {:class "ui fluid blue button"}
+                   [:i {:class "plus outline icon"}]
+                   "Add to journey"])]])))))
 
 (defn category-view [[category attractions] owner]
   (reify
@@ -74,7 +85,7 @@
     (render [_]
       (html [:div
              [:h1 (:name category)]
-             [:div {:class "ui link four stackable cards category-view"}
+             [:div {:class "ui link three stackable cards category-view"}
              (om/build-all attraction-card-view attractions)]]))))
 
 (defn all-attractions-view [[attraction-categories attractions] owner]

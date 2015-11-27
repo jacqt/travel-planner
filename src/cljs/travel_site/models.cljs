@@ -16,7 +16,7 @@
                                                        :coords {}}
                                     :end-place {:address ""
                                                      :coords {}}
-                                    :waypoint-attraction-ids []}
+                                    :waypoint-attraction-ids {}}
                           :transit-journey {}
                           :cities [{:city-name "London"
                                     :id 1}]}))

@@ -13,7 +13,10 @@
   (when (some? (:waypoint-attraction-ids query-params))
     (om/update!
       (-> app-state :journey :waypoint-attraction-ids)
-      (vec (map int (:waypoint-attraction-ids query-params)))))
+      (reduce
+        #(assoc %1 %2 true)
+        {}
+        (map int(:waypoint-attraction-ids query-params)))))
   (when (some? (:start-place query-params))
     (om/update!
       (-> app-state :journey :start-place)
