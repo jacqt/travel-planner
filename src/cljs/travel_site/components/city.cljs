@@ -26,25 +26,17 @@
                [:div {:class "ui header transit-directions-header"}
                 [:div {:class "content"}
                  (:start_name transit-directions)
-                 [:div {:class "sub header"} (:end_name transit-directions)]]
-                ]
+                 [:div {:class "sub header"} (:end_name transit-directions)]]]
                [:ul {:class "transit-steps"}
                 (map #(html [:li (:instructions %)])
-                     (:steps directions))]
-               ]))
-      )
+                     (:steps directions))]])))))
 
-    )
-  )
 (defn transit-view [transit-journey owner]
   (reify
     om/IRender
     (render [_]
       (html [:div {:class "transit-view"}
-             (om/build-all transit-directions-view (map #(js->clj % :keywordize-keys true) transit-journey)) ])
-      )
-    )
-  )
+             (om/build-all transit-directions-view (map #(js->clj % :keywordize-keys true) transit-journey)) ]))))
 
 ;; View to edit the current journey (i.e. change start/end locations and remove existing waypoints)
 (defn attractions-selector-view [[current-city journey transit-journey] owner]
@@ -156,10 +148,6 @@
              :travelMode (.. js/google -maps -TravelMode -DRIVING)}
         (fn [response status]
           (when (= status (.. js/google -maps -DirectionsStatus -OK))
-            ;; TODO make this give back transit directions rather than driving directions
-            ;; Potenial problems:
-            ;;  * Need to specify start/end times
-            ;;  * Timezones will be an issue *sigh*
             (let [response-channel (chan)
                   response (js->clj response :keywordize-keys true) ]
               (get-transit-directions response-channel response waypoints (om/get-state owner :google-directions-service))
@@ -178,8 +166,7 @@
                             (-> journey :start-place :address)
                             (-> journey :end-place :address)
                             waypoints
-                            partial-directions))))))
-                ))))))))
+                            partial-directions))))))))))))))
 
 (defn attraction-map-view [[current-city journey] owner]
   (reify
