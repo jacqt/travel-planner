@@ -63,7 +63,7 @@
       (html [:div {:class "ui fluid centered card attraction-card-view"
                    :on-click #(add-waypoint attraction)}
              [:div {:class "image"
-                    :style {:background-image "url(https://notifsta.s3.amazonaws.com/St%20johns%20College.jpg)"}}]
+                    :style {:background-image (str "url( " (:image_url attraction) " )")}}]
              [:div {:class "content"}
               [:div {:class "header"} (:name attraction)]
               [:div {:class "description"} (:description attraction)]]]))))
@@ -72,7 +72,7 @@
   (reify
     om/IRender
     (render [_]
-      (html [:div 
+      (html [:div
              [:h1 (:name category)]
              [:div {:class "ui link four stackable cards category-view"}
              (om/build-all attraction-card-view attractions)]]))))

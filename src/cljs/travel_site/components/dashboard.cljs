@@ -33,6 +33,6 @@
                  [:a {:class "ui inverted button"} "Log in"]
                  [:a {:class "ui inverted button"} "Sign up"]]]]
               [:div {:class "ui text container"}
-               [:h1 {:class "ui inverted header"} "Fiberboard"]
-               [:h2 "Plan your trip to..."]
+               [:h1 {:class "ui inverted header"} "Sonal is the absolute best"]
+               [:h2 "Plan you :( r trip to..."]
                (om/build-all city-button cities)]] ]))))

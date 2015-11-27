@@ -27,7 +27,6 @@ in 21.36 seconds.`, you're ready to go. Browse to
 
 ## TODO
 
-  * Provide transit directions instead of driving directions
   * Add animations and polish
 
 ## Chestnut

@@ -1,4 +1,5 @@
 (ns travel-site.components.city
+  (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [om.core :as om :include-macros true]
             [sablono.core :as html :refer-macros [html]]
             [cljs.core.async :refer [put! chan <!]]
@@ -10,6 +11,7 @@
             [travel-site.components.attractions :as attractions]))
 
 
+;; View to edit the current journey (i.e. change start/end locations and remove existing waypoints)
 (defn attractions-selector-view [[current-city journey] owner]
   (reify
     om/IRender
@@ -36,6 +38,8 @@
               [:div {:class "field"}
                (om/build attractions/waypoints-selector-view [current-city journey])]]]))))
 
+
+;; Functions for the map view.
 (defn journey-same? [previous-journey next-journey]
   (and
     (= (-> previous-journey :waypoint-attraction-ids) (-> next-journey :waypoint-attraction-ids))
@@ -46,6 +50,26 @@
   {:location {:lat (-> attraction :location :coordinates (get 1))
               :lng (-> attraction :location :coordinates (get 0)) }
    :stopover true })
+
+(defn get-transit-directions [response-channel google-driving-directions google-directions-service]
+  (let [trip-legs (-> google-driving-directions :routes (get 0) :legs)]
+    (reduce
+      (fn [partial-directions {:keys [start_location end_location]}]
+        (.route
+          google-directions-service
+          #js {:origin start_location
+               :destination end_location
+               :travelMode (.. js/google -maps -TravelMode -TRANSIT)}
+          (fn [response status]
+            (put! response-channel response)
+            )))
+      []
+      trip-legs)))
+
+(def colors ["red" "blue" "yellow" "green" "turquoise" "purple" "cyan" "yellow"])
+
+(defn next-color [index]
+  (get colors (mod index (count colors))))
 
 (defn update-journey-plan [owner]
   (let [[current-city journey] (om/get-props owner)]
@@ -64,10 +88,43 @@
                               (-> current-city :attractions :data))))
              :optimizeWaypoints true
              :travelMode (.. js/google -maps -TravelMode -DRIVING)}
-        (fn [response, status]
-          (js/console.log response)
+        (fn [response status]
           (when (= status (.. js/google -maps -DirectionsStatus -OK))
-            (.setDirections (om/get-state owner :google-directions-renderer) response)))))))
+            ;; TODO make this give back transit directions rather than driving directions
+            ;; Potenial problems:
+            ;;  * Need to specify start/end times
+            ;;  * Timezones will be an issue *sigh*
+            (js/console.log "Here we go!!" response)
+            (let [response-channel (chan)
+                  response (js->clj response :keywordize-keys true) ]
+              (get-transit-directions response-channel response (om/get-state owner :google-directions-service))
+              (go
+                (loop [msg-count (inc (count (-> response :request :waypoints)))
+                       partial-directions []]
+                  (if (> msg-count 0)
+                    (recur (dec msg-count) (conj partial-directions (<! response-channel)))
+                    (do
+                      (let [prev-renderers (om/get-state owner :all-renderers)]
+                        (if (some? prev-renderers)
+                          (reduce
+                            (fn [_ renderer]
+                              (.setMap renderer nil))
+                            nil
+                            prev-renderers)))
+
+                      (let [all-renderers (reduce
+                                            (fn [renderers [index directions]]
+                                              (js/console.log "Rendering one leg of the thing")
+                                              (let [renderer (js/google.maps.DirectionsRenderer.
+                                                               #js {:polylineOptions #js {:strokeColor (next-color index)}})]
+                                                (.setMap renderer (om/get-state owner :google-map))
+                                                (.setDirections renderer (clj->js directions))
+                                                (conj renderers renderer)))
+                                            []
+                                            (map vector (range) partial-directions))]
+                        (om/set-state! owner :all-renderers all-renderers)
+                        ))))
+                ))))))))
 
 (defn attraction-map-view [[current-city journey] owner]
   (reify
@@ -103,6 +160,9 @@
 
 (defn city-view [{:keys [current-city journey]} owner]
   (reify
+    ;; A bit hacky, but register a listener on the root city component whose job is to sync
+    ;; changes in the journey state to the url. Not sure of a better way to do it.
+    ;; Perhaps better to put it in a different component...
     om/IDidUpdate
     (did-update [_ next-props _]
       (when-not (journey-same? (:journey (om.core/get-props owner)) (:journey next-props))

@@ -42,8 +42,7 @@
           (fn [city]
             (om/update! app-state :current-city city)
             (process-query-params app-state query-params)))
-        (process-query-params app-state query-params))
-      )))
+        (process-query-params app-state query-params)))))
 
 ; enable fallback that don't have HTML 5 History
 (secretary/set-config! :prefix "#")
