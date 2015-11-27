@@ -19,11 +19,7 @@
                                     :waypoint-attraction-ids []}
                           :transit-journey {}
                           :cities [{:city-name "London"
-                                    :id 1}
-                                   {:city-name "Oxford"
-                                    :id 2}
-                                   {:city-name "Paris"
-                                    :id 3}]}))
+                                    :id 1}]}))
 
 (defn whole-state []
   (om/ref-cursor (om/root-cursor app-state)))

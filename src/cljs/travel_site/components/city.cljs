@@ -177,7 +177,7 @@
             google-directions-service (js/google.maps.DirectionsService.)
             google-directions-renderer (js/google.maps.DirectionsRenderer.)
             google-city-center (js/google.maps.LatLng.
-                                 (-> current-city :city :data :center :coordinates (get 1)) ;; TODO - flip to 0, after david fixes data source...
+                                 (-> current-city :city :data :center :coordinates (get 1))
                                  (-> current-city :city :data :center :coordinates (get 0)))]
         (let [google-map (js/google.maps.Map.
                            google-map-container
@@ -217,9 +217,6 @@
     om/IRenderState
     (render-state [this _]
       (html [:div {:class "city-view"}
-             [:pre (print-str current-city)]
-             [:pre (print-str journey)]
-             [:pre (print-str transit-journey)]
              [:h1 (str (-> current-city :city :data :name))]
              [:div {:class "ui centered grid"}
               [:div {:class "fourteen wide column row"}
