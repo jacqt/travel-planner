@@ -16,6 +16,9 @@
 (defn next-color [index]
   (get colors (mod index (count colors))))
 
+(defn geojson->goog-latlng [[lng lat]]
+  (js/google.maps.LatLng. lat lng))
+
 
 (defn transit-directions-view [transit-directions owner]
   (reify
@@ -176,9 +179,7 @@
       (let [google-map-container (om/get-node owner)
             google-directions-service (js/google.maps.DirectionsService.)
             google-directions-renderer (js/google.maps.DirectionsRenderer.)
-            google-city-center (js/google.maps.LatLng.
-                                 (-> current-city :city :data :center :coordinates (get 1))
-                                 (-> current-city :city :data :center :coordinates (get 0)))]
+            google-city-center (geojson->goog-latlng (-> current-city :city :data :center :coordinates))]
         (let [google-map (js/google.maps.Map.
                            google-map-container
                            #js {:center google-city-center
@@ -191,9 +192,12 @@
 
     ;; recompute the route upon journey update
     om/IDidUpdate
-    (did-update [_ [_ next-journey] _]
-      (when-not (journey-same? (get (om.core/get-props owner) 1) next-journey)
-        (update-journey-plan owner)))
+    (did-update [_ [next-city next-journey] _]
+      (let [[city journey] (om.core/get-props owner)]
+        (if-not (journey-same? journey next-journey)
+          (update-journey-plan owner))
+        (if-not (= (-> city :city :data :center :coordinates) (-> next-city :city :data :center :coordinates))
+          (.setCenter (om/get-state owner :google-map) (geojson->goog-latlng (-> current-city :city :data :center :coordinates))))))
 
     om/IRenderState
     (render-state [this state]

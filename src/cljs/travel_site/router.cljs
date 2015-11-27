@@ -21,8 +21,7 @@
   (when (some? (:end-place query-params))
     (om/update!
       (-> app-state :journey :end-place)
-      (js->clj (js/JSON.parse (:end-place query-params)) :keywordize-keys true)))
-  (om/update! app-state :route "city"))
+      (js->clj (js/JSON.parse (:end-place query-params)) :keywordize-keys true))))
 
 (defn go-to-hash [new-hash]
   (aset js/window.location "hash" new-hash))
@@ -36,6 +35,7 @@
   (defroute
     "/city/:id" [id query-params]
     (let [app-state (models/whole-state)]
+      (om/update! app-state :route "city")
       (if-not (= (int id) (-> app-state :current-city :id))
         (http/get-city
           id
