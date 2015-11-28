@@ -47,27 +47,23 @@
   (reify
     om/IRender
     (render [_]
-      (html [:div {:class "ui segment attractions-selector-view"}
-             [:h1 "Plan your trip!"]
-             [:div {:class "ui form twelve wide column centered"}
-              [:div {:class "field"}
-               [:label "Start address"]
-               [:div {:class "ui fluid input"}
-                (om/build inputs/address-autocomplete-input [(-> journey :start-place)
-                                                             {:edit-key :address
-                                                              :coords-key :coords
-                                                              :className "start-address-input" ;;TODO - rename className -> class
-                                                              :attractionholder-text "Start address"}])]]
-              [:div {:class "field"}
-               [:label "End address"]
-               [:div {:class "ui fluid input"}
-                (om/build inputs/address-autocomplete-input [(-> journey :end-place)
-                                                             {:edit-key :address
-                                                              :coords-key :coords
-                                                              :className "end-address-input" ;; TODO - rename className -> class
-                                                              :attractionholder-text "End address"}])]]
-              [:div {:class "field"}
-               (om/build attractions/waypoints-selector-view [current-city journey])]]]))))
+      (html [:div {:class "ui basic segment attractions-selector-view"}
+             [:div {:class "ui form twelve wide"}
+              [:div {:class "inline fields"}
+               [:div {:class "sixteen wide field"}
+                [:div {:class "ui fluid input address-input"}
+                 (om/build inputs/address-autocomplete-input [(-> journey :start-place)
+                                                              {:edit-key :address
+                                                               :coords-key :coords
+                                                               :className "address-fields" ;;TODO - rename className -> class
+                                                               :placeholder-text "Start address"}])]
+                [:div {:class "ui fluid input address-input"}
+                 (om/build inputs/address-autocomplete-input [(-> journey :end-place)
+                                                              {:edit-key :address
+                                                               :coords-key :coords
+                                                               :className "address-fields" ;; TODO - rename className -> class
+                                                               :placeholder-text "End address"}])]]
+               [:div {:class "field"}]]]]))))
 
 
 ;; Functions for the map view.
@@ -265,17 +261,16 @@
     om/IRenderState
     (render-state [this _]
       (html [:div {:class "city-view"}
-             (om/build navbar/navbar-view current-city)
-             [:h1 (str (-> current-city :city :data :name))]
+             [:div {:class "ui inverted vertical masthead center aligned segment"}
+              [:div {:class "ui text container"}
+               [:h1 {:class "ui inverted header"} (str (-> current-city :city :data :name))]
+                (om/build attractions-selector-view [current-city journey transit-journey]) ]]
              [:div {:class "ui centered grid"}
-              [:div {:class "fourteen wide column row"}
-               [:div {:class "five wide column"}
-                (om/build attractions-selector-view [current-city journey transit-journey])]
-               [:div {:class "nine wide column"}
-                (om/build attraction-map-view [current-city journey])
-                (om/build transit-view transit-journey)]]
               [:div {:class "fourteen wide column row"}
                [:div {:class "fourteen wide column"}
                 (om/build attractions/all-attractions-view [(-> current-city :attraction_categories :data)
                                                             (-> current-city :attractions :data)])]]
+              [:div {:class "ui fourteen wide column row basic segment"}
+               [:div {:class "fourteen wide column"}
+                (om/build attraction-map-view [current-city journey])]]
               ]]))))

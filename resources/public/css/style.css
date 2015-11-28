@@ -1,7 +1,14 @@
 .masthead.segment {
   min-height: 700px;
   padding: 1em 0em;
+  background-size: cover !important;
+  background-image: url("https://a0.muscache.com/ic/discover/397?interpolation=lanczos-none&output-format=jpg&output-quality=70&v=33b4f2&downsize=1300:730px") !important;
 }
+
+h1.ui.inverted.header::selection {
+  color: #FFFFFF;
+}
+
 .masthead .logo.item img {
   margin-right: 1em;
 }
@@ -14,6 +21,10 @@
   font-size: 4em;
   font-weight: normal;
 }
+
+.city-view .masthead h1.ui.header {
+  margin-top: 3.8em;
+}
 .masthead h2 {
   font-size: 1.7em;
   font-weight: normal;
@@ -21,6 +32,25 @@
 
 .city-view .city-map-container {
   height: 500px;
+}
+
+.city-view .attractions-selector-view {
+  position:absolute;
+  left:0;
+  right:0;
+  margin-left:auto;
+  margin-right:auto;
+  bottom: 10px;
+  width: 60%;
+  max-width: 800px;
+}
+
+.city-view .attractions-selector-view .form .fields .field .address-input {
+  margin: 0;
+}
+
+.city-view .attractions-selector-view .form .fields .field .address-input input {
+  border-radius: 0;
 }
 
 .city-view .all-attractions-view .attraction-card-view {
