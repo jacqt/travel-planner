@@ -8,11 +8,12 @@
             [travel-site.router :as router]
             [travel-site.utils.inputs :as inputs]
             [travel-site.utils.http :as http]
+            [travel-site.utils.constants :as constants]
             [travel-site.models :as models]
             [travel-site.components.attractions :as attractions]))
 
 ;; Various util functions
-(def colors ["red" "blue" "yellow" "green" "turquoise" "purple" "cyan" "yellow"])
+(def colors ["green" "blue" "#66CD00" "#03A89E" "#83F52C" "#4C7064"])
 
 (defn next-color [index]
   (get colors (mod index (count colors))))
@@ -227,6 +228,7 @@
                                 :overviewMapControl false
                                 :mapTypeControl false
                                 :streetViewControl false
+                                :styles constants/map-style-arr
                                 :zoom 9})]
           (om/set-state! owner :google-map google-map)
           (om/set-state! owner :google-directions-service google-directions-service)
