@@ -3,19 +3,27 @@
             [cljsjs.jquery]
             [sablono.core :refer-macros [html]]
             [exicon.semantic-ui]
-            [travel-site.router :as router]
-            ))
+            [travel-site.router :as router]))
 
-(defn navbar-view [app-state owner]
+(defn navbar-view [current-city owner]
   (reify
     om/IDidMount
     (did-mount [_]
       (.dropdown
         (.find (js/$. (om/get-node owner)) ".ui.dropdown")
-        #js {:onChange
-               (fn [new-city-id]
-                 (router/go-to-hash (str "/city/" new-city-id)))}
-        ))
+        "set selected"
+        1)
+      (.dropdown
+        (.find (js/$. (om/get-node owner)) ".ui.dropdown")
+        #js {:onChange #(router/go-to-hash (str "/city/" %))}))
+
+    ;om/IDidUpdate
+    ;(did-update [_ [prev-city] _]
+      ;(if-not (= (-> owner om/get-props :city :data :id) (-> prev-city :city :data :id))
+        ;(.dropdown
+          ;(.find (js/$. (om/get-node owner)) ".ui.dropdown")
+          ;"set selected"
+          ;(-> owner om/get-props :city :data :id))))
 
     om/IRender
     (render [this]
@@ -24,9 +32,7 @@
               [:a {:class "brand item" :href "#/"}
                "Home"]
               [:div {:class "ui search selection dropdown"}
-               [:input {:type "hidden" :name "city"
-                        :on-change #(js/console.log %)
-                        }]
+               [:input {:type "hidden" :name "city"}]
                [:i {:class "dropdown icon"}]
                [:div {:class "default text"} "Plan your trip in..."]
                [:div {:class "menu"}

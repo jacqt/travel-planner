@@ -236,11 +236,11 @@
 
     ;; recompute the route upon journey update
     om/IDidUpdate
-    (did-update [_ [next-city next-journey] _]
+    (did-update [_ [prev-city prev-journey] _]
       (let [[city journey] (om/get-props owner)]
-        (if-not (journey-same? journey next-journey)
+        (if-not (journey-same? journey prev-journey)
           (update-journey-plan owner))
-        (if-not (= (-> city :city :data :center :coordinates) (-> next-city :city :data :center :coordinates))
+        (if-not (= (-> city :city :data :center :coordinates) (-> prev-city :city :data :center :coordinates))
           (.setCenter (om/get-state owner :google-map) (geojson->goog-latlng (-> current-city :city :data :center :coordinates))))))
 
     om/IRenderState
@@ -265,7 +265,7 @@
     om/IRenderState
     (render-state [this _]
       (html [:div {:class "city-view"}
-             (om/build navbar/navbar-view nil)
+             (om/build navbar/navbar-view current-city)
              [:h1 (str (-> current-city :city :data :name))]
              [:div {:class "ui centered grid"}
               [:div {:class "fourteen wide column row"}
