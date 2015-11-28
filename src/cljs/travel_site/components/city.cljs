@@ -20,6 +20,12 @@
 (defn geojson->goog-latlng [[lng lat]]
   (js/google.maps.LatLng. lat lng))
 
+(defn get-start-location [transit-directions]
+  (-> transit-directions :directions :routes (get 0) :legs (get 0) :start_location))
+
+(defn get-end-location [transit-directions]
+  (-> transit-directions :directions :routes (get 0) :legs (get 0) :end_location))
+
 
 (defn transit-directions-view [transit-directions owner]
   (reify
@@ -119,53 +125,46 @@
         []
         all-directions))))
 
-(defn create-renderers [owner all-directions]
+(defn make-transit-journey [waypoints journey all-directions]
+  (annotate-directions
+    (-> journey :start-place :address)
+    (-> journey :end-place :address)
+    waypoints
+    all-directions))
+
+(defn create-renderers [owner transit-directions]
   (reduce
     (fn [renderers [index directions]]
       (let [renderer (js/google.maps.DirectionsRenderer.
                        #js {:polylineOptions #js {:strokeColor (next-color index)}
                             :suppressMarkers true})]
         (.setMap renderer (om/get-state owner :google-map))
-        (.setDirections renderer (clj->js (:directions directions)))
+        (.setDirections renderer (clj->js (-> directions :directions clj->js)))
         (conj renderers renderer)))
     []
-    (map vector (range) all-directions)))
+    (map vector (range) transit-directions)))
 
-(defn gen-new-renderers [owner waypoints journey all-directions]
-  (let [all-renderers (create-renderers owner all-directions)]
-    (om/set-state! owner :all-renderers all-renderers)
-    (om/update!
-      (models/transit-journey)
-      (annotate-directions
-        (-> journey :start-place :address)
-        (-> journey :end-place :address)
-        waypoints
-        all-directions))))
+(defn gen-new-renderers [owner transit-directions]
+  (let [all-renderers (create-renderers owner transit-directions)]
+    (om/set-state! owner :all-renderers all-renderers)))
 
-(defn get-start-location [transit-directions]
-  (-> transit-directions :directions :routes (get 0) :legs (get 0) :start_location))
-
-(defn get-end-location [transit-directions]
-  (-> transit-directions :directions :routes (get 0) :legs (get 0) :end_location))
-
-(defn create-markers [owner]
+(defn create-markers [owner transit-journey]
   (reduce
     (fn [partial-markers [place-id location]]
       (conj
         partial-markers
         (js/google.maps.Marker.
-          #js {:position location 
+          #js {:position location
                :map (om/get-state owner :google-map)
-               :title (str place-id) 
-               :label (str (inc place-id)) 
-               })))
+               :title (str place-id)
+               :label (str (inc place-id))})))
     []
-    (vec 
+    (vec
       (map vector
            "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
            (conj
-             (vec (map get-start-location (models/transit-journey)))
-             (get-end-location (last (models/transit-journey))))))))
+             (vec (map get-start-location transit-journey))
+             (get-end-location (last transit-journey)))))))
 
 ;; TODO - make sure that this doesn't cause a memory leak
 ;; since I don't actually delete the object
@@ -178,16 +177,19 @@
         nil
         old-markers))))
 
-(defn gen-new-markers [owner]
-  (let [all-markers (create-markers owner)]
+(defn gen-new-markers [owner transit-journey]
+  (let [all-markers (create-markers owner transit-journey)]
     (om/set-state! owner :all-markers all-markers)))
 
+(defn valid-journey? [journey]
+  (and (not (empty? (-> journey :start-place :coords))) (not (empty? (-> journey :end-place :coords)))))
+
 (defn update-journey-plan [owner]
-  (let [[current-city journey] (om/get-props owner)
+  (let [{:keys [current-city journey transit-journey]} (om/get-props owner)
         waypoints (attractions/get-waypoints
                     (-> journey :waypoint-attraction-ids)
                     (-> current-city :attractions :data)) ]
-    (when (and (not (empty? (-> journey :start-place :coords))) (not (empty? (-> journey :end-place :coords))))
+    (when (valid-journey? journey)
       (.route
         (om/get-state owner :google-directions-service)
         #js {:origin (-> journey :start-place :coords clj->js)
@@ -206,36 +208,37 @@
                   (if (> msg-count 0)
                     (recur (dec msg-count) (conj partial-directions (<! response-channel)))
                     (do
-                      (remove-old-renderers owner)
-                      (remove-old-markers owner)
-                      (gen-new-renderers owner waypoints journey partial-directions)
-                      (gen-new-markers owner))))))))))))
+                      (om/update!
+                        transit-journey
+                        (make-transit-journey waypoints journey partial-directions)))))))))))))
 
-(defn attraction-map-view [[current-city journey] owner]
+(defn attraction-map-view [[current-city journey transit-journey] owner]
   (reify
     ;; initialize the google maps objects and store them as local state to the map view
     om/IDidMount
     (did-mount [_]
       (let [google-map-container (om/get-node owner)
             google-directions-service (js/google.maps.DirectionsService.)
-            google-directions-renderer (js/google.maps.DirectionsRenderer.)
             google-city-center (geojson->goog-latlng (-> current-city :city :data :center :coordinates))]
         (let [google-map (js/google.maps.Map.
                            google-map-container
                            #js {:center google-city-center
                                 :zoom 9})]
-          (.setMap google-directions-renderer google-map)
           (om/set-state! owner :google-map google-map)
           (om/set-state! owner :google-directions-service google-directions-service)
-          (om/set-state! owner :google-directions-renderer google-directions-renderer)
-          (update-journey-plan owner))))
+          (gen-new-renderers owner transit-journey)
+          (gen-new-markers owner transit-journey))))
 
     ;; recompute the route upon journey update
     om/IDidUpdate
-    (did-update [_ [prev-city prev-journey] _]
-      (let [[city journey] (om/get-props owner)]
-        (if-not (journey-same? journey prev-journey)
-          (update-journey-plan owner))
+    (did-update [_ [prev-city prev-journey prev-transit-journey] _]
+      (let [[city journey transit-journey] (om/get-props owner)]
+        (when (valid-journey? journey)
+          (when-not (= transit-journey prev-transit-journey)
+            (remove-old-markers owner)
+            (remove-old-renderers owner)
+            (gen-new-renderers owner transit-journey)
+            (gen-new-markers owner transit-journey)))
         (if-not (= (-> city :city :data :center :coordinates) (-> prev-city :city :data :center :coordinates))
           (.setCenter (om/get-state owner :google-map) (geojson->goog-latlng (-> current-city :city :data :center :coordinates))))))
 
@@ -245,12 +248,19 @@
 
 (defn city-view [{:keys [current-city journey transit-journey]} owner]
   (reify
+    om/IDidMount
+    (did-mount [_]
+      (let [google-directions-service (js/google.maps.DirectionsService.)]
+        (om/set-state! owner :google-directions-service google-directions-service))
+      (update-journey-plan owner))
+
     ;; A bit hacky, but register a listener on the root city component whose job is to sync
     ;; changes in the journey state to the url. Not sure of a better way to do it.
     ;; Perhaps better to put it in a different component...
     om/IDidUpdate
     (did-update [_ next-props _]
       (when-not (journey-same? (:journey (om/get-props owner)) (:journey next-props))
+        (update-journey-plan owner)
         (router/go-to-hash
           (http/encode-url-parameters
             (str "/city/" (-> current-city :city :data :id))
@@ -272,5 +282,5 @@
                                                             (-> current-city :attractions :data)])]]
               [:div {:class "ui fourteen wide column row basic segment"}
                [:div {:class "fourteen wide column"}
-                (om/build attraction-map-view [current-city journey])]]
+                (om/build attraction-map-view [current-city journey transit-journey])]]
               ]]))))
