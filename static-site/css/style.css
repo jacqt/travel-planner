@@ -27,7 +27,11 @@ h1.ui.inverted.header::selection {
   font-weight: normal;
 }
 
-.city-view .city-map-container {
+.city-view .preview-directions .city-map-container {
+  height: 300px;
+}
+
+.city-view .final-directions .city-map-container {
   height: 500px;
 }
 
