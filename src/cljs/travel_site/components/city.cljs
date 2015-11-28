@@ -137,6 +137,7 @@
     (fn [renderers [index directions]]
       (let [renderer (js/google.maps.DirectionsRenderer.
                        #js {:polylineOptions #js {:strokeColor (next-color index)}
+                            :suppressInfoWindows true
                             :suppressMarkers true})]
         (.setMap renderer (om/get-state owner :google-map))
         (.setDirections renderer (clj->js (-> directions :directions clj->js)))
@@ -223,6 +224,9 @@
         (let [google-map (js/google.maps.Map.
                            google-map-container
                            #js {:center google-city-center
+                                :overviewMapControl false
+                                :mapTypeControl false
+                                :streetViewControl false
                                 :zoom 9})]
           (om/set-state! owner :google-map google-map)
           (om/set-state! owner :google-directions-service google-directions-service)
@@ -252,7 +256,8 @@
     (did-mount [_]
       (let [google-directions-service (js/google.maps.DirectionsService.)]
         (om/set-state! owner :google-directions-service google-directions-service))
-      (update-journey-plan owner))
+      (update-journey-plan owner)
+      (.sticky (.find (js/$. (om/get-node owner)) ".stickied-map")))
 
     ;; A bit hacky, but register a listener on the root city component whose job is to sync
     ;; changes in the journey state to the url. Not sure of a better way to do it.
@@ -276,11 +281,16 @@
                [:h1 {:class "ui inverted header"} (str (-> current-city :city :data :name))]
                 (om/build attractions-selector-view [current-city journey transit-journey]) ]]
              [:div {:class "ui centered grid"}
-              [:div {:class "fourteen wide column row"}
-               [:div {:class "fourteen wide column"}
+              [:div {:class "sixteen wide column row"}
+               [:div {:class "four wide column"}
+                [:div {:class "ui basic sticky stickied-map segment"}
+                 [:div {:class "ui segment preview-directions"}
+                  [:h3 "Route preview"]
+                  (om/build attraction-map-view [current-city journey transit-journey])]] ]
+               [:div {:class "twelve wide column"}
                 (om/build attractions/all-attractions-view [(-> current-city :attraction_categories :data)
                                                             (-> current-city :attractions :data)])]]
-              [:div {:class "ui fourteen wide column row basic segment"}
+              [:div {:class "ui fourteen wide column row basic segment final-directions"}
                [:div {:class "fourteen wide column"}
                 (om/build attraction-map-view [current-city journey transit-journey])]]
               ]]))))
