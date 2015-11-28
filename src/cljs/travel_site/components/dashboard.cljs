@@ -24,14 +24,6 @@
     (render-state [this _]
       (html [:div {:class "pusher"}
              [:div {:class "ui inverted vertical masthead center aligned segment"}
-              [:div {:class "ui container"}
-               [:div {:class "ui large secondary inverted pointing menu"}
-                [:a {:class "active item"} "Home"]
-                [:a {:class "item"} "Route1"]
-                [:a {:class "item"} "Route2"]
-                [:div {:class "right item"}
-                 [:a {:class "ui inverted button"} "Log in"]
-                 [:a {:class "ui inverted button"} "Sign up"]]]]
               [:div {:class "ui text container"}
                [:h1 {:class "ui inverted header"} "Fiberboard"]
                [:h2 "Plan your trip to..."]
