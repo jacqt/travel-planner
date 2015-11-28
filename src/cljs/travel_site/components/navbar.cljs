@@ -12,18 +12,18 @@
       (.dropdown
         (.find (js/$. (om/get-node owner)) ".ui.dropdown")
         "set selected"
-        1)
+        (-> current-city :city :data :id))
       (.dropdown
         (.find (js/$. (om/get-node owner)) ".ui.dropdown")
         #js {:onChange #(router/go-to-hash (str "/city/" %))}))
 
-    ;om/IDidUpdate
-    ;(did-update [_ [prev-city] _]
-      ;(if-not (= (-> owner om/get-props :city :data :id) (-> prev-city :city :data :id))
-        ;(.dropdown
-          ;(.find (js/$. (om/get-node owner)) ".ui.dropdown")
-          ;"set selected"
-          ;(-> owner om/get-props :city :data :id))))
+    om/IDidUpdate
+    (did-update [_ prev-city _]
+      (if-not (= (-> owner om/get-props :city :data :id) (-> prev-city :city :data :id))
+        (.dropdown
+          (.find (js/$. (om/get-node owner)) ".ui.dropdown")
+          "set selected"
+          (-> current-city :city :data :id))))
 
     om/IRender
     (render [this]
