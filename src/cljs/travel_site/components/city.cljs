@@ -265,15 +265,15 @@
     ;; changes in the journey state to the url. Not sure of a better way to do it.
     ;; Perhaps better to put it in a different component...
     om/IDidUpdate
-    (did-update [_ next-props _]
-      (when-not (journey-same? (:journey (om/get-props owner)) (:journey next-props))
+    (did-update [_ prev-props _]
+      (when-not (journey-same? journey (:journey prev-props))
         (update-journey-plan owner)
         (router/go-to-hash
           (http/encode-url-parameters
             (str "/city/" (-> current-city :city :data :id))
-            {"start-place" (js/JSON.stringify (clj->js (-> (om/get-props owner) :journey :start-place)))
-             "end-place" (js/JSON.stringify (clj->js (-> (om/get-props owner) :journey :end-place)))
-             "waypoint-attraction-ids[]" (clj->js (-> (om/get-props owner) :journey :waypoint-attraction-ids keys))}))))
+            {"start-place" (js/JSON.stringify (clj->js (-> journey :start-place)))
+             "end-place" (js/JSON.stringify (clj->js (-> journey :end-place)))
+             "waypoint-attraction-ids[]" (clj->js (-> journey :waypoint-attraction-ids keys))}))))
 
     om/IRenderState
     (render-state [this _]
