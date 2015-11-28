@@ -88,7 +88,7 @@
   (reify
     om/IRender
     (render [_]
-      (html [:div
+      (html [:div {:class "ui padded basic segment"}
              [:h1 (:name category)]
              [:div {:class "ui link three stackable cards category-view"}
              (om/build-all attraction-card-view attractions)]]))))
@@ -97,7 +97,7 @@
   (reify
     om/IRender
     (render [_]
-      (html [:div {:class "ui segment all-attractions-view"}
+      (html [:div {:class "ui basic segment all-attractions-view"}
              (map
                (fn [category]
                  (om/build category-view [category (filter #(= (:id category) (:category_id %)) attractions)]))
