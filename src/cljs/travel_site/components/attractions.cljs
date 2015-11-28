@@ -97,7 +97,7 @@
   (reify
     om/IRender
     (render [_]
-      (html [:div {:class "ui basic segment all-attractions-view"}
+      (html [:div {:class "all-attractions-view"}
              (map
                (fn [category]
                  (om/build category-view [category (filter #(= (:id category) (:category_id %)) attractions)]))

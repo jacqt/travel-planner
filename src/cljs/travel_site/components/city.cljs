@@ -13,10 +13,8 @@
             [travel-site.components.attractions :as attractions]))
 
 ;; Various util functions
-(def colors ["green" "blue" "#66CD00" "#03A89E" "#83F52C" "#4C7064"])
-
-(defn next-color [index]
-  (get colors (mod index (count colors))))
+(def colors (flatten (repeat ["green" "blue" "#66CD00" "#03A89E" "#83F52C" "#4C7064"])))
+(def widths (flatten (repeat [8.0 6.0 4.0])))
 
 (defn geojson->goog-latlng [[lng lat]]
   (js/google.maps.LatLng. lat lng))
@@ -137,7 +135,11 @@
   (reduce
     (fn [renderers [index directions]]
       (let [renderer (js/google.maps.DirectionsRenderer.
-                       #js {:polylineOptions #js {:strokeColor (next-color index)}
+                       #js {:polylineOptions #js {:strokeColor (nth colors index)
+                                                  :strokeOpacity 0.6
+                                                  :geodesic true
+                                                  :icons #js []
+                                                  :strokeWeight (nth widths index)}
                             :suppressInfoWindows true
                             :suppressMarkers true})]
         (.setMap renderer (om/get-state owner :google-map))
@@ -285,7 +287,7 @@
              [:div {:class "ui centered grid"}
               [:div {:class "sixteen wide column row"}
                [:div {:class "four wide column"}
-                [:div {:class "ui basic sticky stickied-map segment"}
+                [:div {:class "ui padded basic sticky stickied-map segment"}
                  [:div {:class "ui segment preview-directions"}
                   [:h3 "Route preview"]
                   (om/build attraction-map-view [current-city journey transit-journey])]] ]
@@ -294,5 +296,8 @@
                                                             (-> current-city :attractions :data)])]]
               [:div {:class "ui fourteen wide column row basic segment final-directions"}
                [:div {:class "fourteen wide column"}
-                (om/build attraction-map-view [current-city journey transit-journey])]]
+                (om/build attraction-map-view [current-city journey transit-journey])] ]
+              [:div {:class "ui fourteen wide column row basic segment final-directions"}
+               [:div {:class "fourteen wide column"}
+                (om/build transit-view transit-journey) ]]
               ]]))))
