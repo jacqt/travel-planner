@@ -3,6 +3,7 @@
             [sablono.core :as html :refer-macros [html]]
             [cljs.core.async :refer [put! chan <!]]
             [cljs.pprint :refer [pprint]]
+            [exicon.semantic-ui]
             [travel-site.router :as router]
             [travel-site.utils.inputs :as inputs]
             [travel-site.utils.http :as http]
@@ -69,15 +70,16 @@
                [:div {:class "content"}
                 [:div {:class "header"} (:name attraction)]
                 [:div {:class "description"} (:description attraction)]]
-               [:div {:class "extra content"
-                      :on-click #(add-waypoint attraction)}
-                (if (attraction-selected? attraction waypoint-attraction-ids)
-                  [:div {:class "ui fluid green button"}
-                   [:i {:class "check outline icon"}]
-                   "Added!" ]
-                  [:div {:class "ui fluid blue button"}
-                   [:i {:class "plus outline icon"}]
-                   "Add to journey"])]])))))
+               (if (attraction-selected? attraction waypoint-attraction-ids)
+                 [:div {:class "ui bottom attached green button"}
+                  [:i {:class "check outline icon"}]
+                  "Added!" ]
+                 [:div {:class "ui fluid blue button"
+                        :on-click #(do
+                                     (.transition (js/$. (om/get-node owner)) "jiggle")
+                                     (add-waypoint attraction))}
+                  [:i {:class "plus outline icon"}]
+                  "Add to journey"])])))))
 
 (defn category-view [[category attractions] owner]
   (reify

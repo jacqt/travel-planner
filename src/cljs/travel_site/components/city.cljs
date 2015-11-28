@@ -4,6 +4,7 @@
             [sablono.core :as html :refer-macros [html]]
             [cljs.core.async :refer [put! chan <!]]
             [cljs.pprint :refer [pprint]]
+            [travel-site.components.navbar :as navbar]
             [travel-site.router :as router]
             [travel-site.utils.inputs :as inputs]
             [travel-site.utils.http :as http]
@@ -264,6 +265,7 @@
     om/IRenderState
     (render-state [this _]
       (html [:div {:class "city-view"}
+             (om/build navbar/navbar-view nil)
              [:h1 (str (-> current-city :city :data :name))]
              [:div {:class "ui centered grid"}
               [:div {:class "fourteen wide column row"}
