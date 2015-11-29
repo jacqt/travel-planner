@@ -36,7 +36,6 @@
   (reify
     om/IRender
     (render [_]
-      (js/console.log (clj->js transit-step))
       (html [:li
              [:b (:instructions transit-step)]
              [:i (str " (" (-> transit-step :distance :text) " - " (-> transit-step :duration :text) ")")]
@@ -276,7 +275,8 @@
                                 :mapTypeControl false
                                 :streetViewControl false
                                 :styles constants/map-style-arr
-                                :zoom 9})]
+                                :zoom 9
+                                :minZoom 9})]
           (om/set-state! owner :google-map google-map)
           (om/set-state! owner :google-directions-service google-directions-service)
           (gen-new-renderers owner transit-journey show-vehicle-icons)
