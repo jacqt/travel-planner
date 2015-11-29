@@ -14,7 +14,14 @@
 
 ;; Various util functions
 (def colors (flatten (repeat ["green" "blue" "#66CD00" "#03A89E" "#83F52C" "#4C7064"])))
-(def widths (flatten (repeat [8.0 6.0 4.0])))
+(def widths (flatten (repeat [6.0 4.0])))
+
+(defn strict-map [map-func map-over]
+  (reduce
+    (fn [_ v]
+      (map-func v))
+    []
+    map-over))
 
 (defn geojson->goog-latlng [[lng lat]]
   (js/google.maps.LatLng. lat lng))
@@ -131,25 +138,47 @@
     waypoints
     all-directions))
 
-(defn create-renderers [owner transit-directions]
+(defn construct-renderer [index directions google-map]
+  (let [renderer (js/google.maps.DirectionsRenderer.
+                   #js {:polylineOptions #js {:strokeColor (nth colors index)
+                                              :strokeOpacity 0.6
+                                              :geodesic true
+                                              :strokeWeight (nth widths index)}
+                        :suppressInfoWindows true
+                        :suppressMarkers true}) ]
+    (.setMap renderer google-map)
+    (.setDirections renderer (clj->js (-> directions :directions clj->js)))
+    renderer))
+
+(defn construct-polyline [index directions google-map]
+  (let [polyline (js/google.maps.Polyline.
+                   #js {:path #js []
+                        :strokeColor (nth colors index)
+                        :strokeOpacity 0.6
+                        :geodesic true
+                        :strokeWeight (nth widths index)})]
+    (.setMap polyline google-map)
+    (strict-map
+      (fn [step]
+        (strict-map
+          (fn [segment]
+            (-> polyline .getPath (.push (clj->js segment))))
+          (:path step)))
+      (-> directions :directions :routes (get 0) :legs (get 0) :steps))
+    polyline))
+
+
+(defn create-renderers [owner transit-directions show-vehicle-icons]
   (reduce
     (fn [renderers [index directions]]
-      (let [renderer (js/google.maps.DirectionsRenderer.
-                       #js {:polylineOptions #js {:strokeColor (nth colors index)
-                                                  :strokeOpacity 0.6
-                                                  :geodesic true
-                                                  :icons #js []
-                                                  :strokeWeight (nth widths index)}
-                            :suppressInfoWindows true
-                            :suppressMarkers true})]
-        (.setMap renderer (om/get-state owner :google-map))
-        (.setDirections renderer (clj->js (-> directions :directions clj->js)))
-        (conj renderers renderer)))
+      (if show-vehicle-icons
+        (conj renderers (construct-renderer index directions (om/get-state owner :google-map)))
+        (conj renderers (construct-polyline index directions (om/get-state owner :google-map)))))
     []
     (map vector (range) transit-directions)))
 
-(defn gen-new-renderers [owner transit-directions]
-  (let [all-renderers (create-renderers owner transit-directions)]
+(defn gen-new-renderers [owner transit-directions show-vehicle-icons]
+  (let [all-renderers (create-renderers owner transit-directions show-vehicle-icons)]
     (om/set-state! owner :all-renderers all-renderers)))
 
 (defn create-markers [owner transit-journey]
@@ -216,7 +245,7 @@
                         transit-journey
                         (make-transit-journey waypoints journey partial-directions)))))))))))))
 
-(defn attraction-map-view [[current-city journey transit-journey] owner]
+(defn attraction-map-view [[current-city journey transit-journey show-vehicle-icons] owner]
   (reify
     ;; initialize the google maps objects and store them as local state to the map view
     om/IDidMount
@@ -234,7 +263,7 @@
                                 :zoom 9})]
           (om/set-state! owner :google-map google-map)
           (om/set-state! owner :google-directions-service google-directions-service)
-          (gen-new-renderers owner transit-journey)
+          (gen-new-renderers owner transit-journey show-vehicle-icons)
           (gen-new-markers owner transit-journey))))
 
     ;; recompute the route upon journey update
@@ -245,7 +274,7 @@
           (when-not (= transit-journey prev-transit-journey)
             (remove-old-markers owner)
             (remove-old-renderers owner)
-            (gen-new-renderers owner transit-journey)
+            (gen-new-renderers owner transit-journey show-vehicle-icons)
             (gen-new-markers owner transit-journey)))
         (if-not (= (-> city :city :data :center :coordinates) (-> prev-city :city :data :center :coordinates))
           (.setCenter (om/get-state owner :google-map) (geojson->goog-latlng (-> current-city :city :data :center :coordinates))))))
@@ -290,13 +319,13 @@
                 [:div {:class "ui padded basic sticky stickied-map segment"}
                  [:div {:class "ui segment preview-directions"}
                   [:h3 "Route preview"]
-                  (om/build attraction-map-view [current-city journey transit-journey])]] ]
+                  (om/build attraction-map-view [current-city journey transit-journey false])]] ]
                [:div {:class "twelve wide column"}
                 (om/build attractions/all-attractions-view [(-> current-city :attraction_categories :data)
                                                             (-> current-city :attractions :data)])]]
               [:div {:class "ui fourteen wide column row basic segment final-directions"}
                [:div {:class "fourteen wide column"}
-                (om/build attraction-map-view [current-city journey transit-journey])] ]
+                (om/build attraction-map-view [current-city journey transit-journey true])] ]
               [:div {:class "ui fourteen wide column row basic segment final-directions"}
                [:div {:class "fourteen wide column"}
                 (om/build transit-view transit-journey) ]]
