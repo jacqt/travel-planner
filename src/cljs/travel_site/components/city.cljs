@@ -229,9 +229,12 @@
                            #js {:center google-city-center
                                 :overviewMapControl false
                                 :mapTypeControl false
+                                :minZoom 10
+                                :maxZoom 17
+                                :scrollwheel false
                                 :streetViewControl false
                                 :styles constants/map-style-arr
-                                :zoom 9})]
+                                :zoom 12})]
           (om/set-state! owner :google-map google-map)
           (om/set-state! owner :google-directions-service google-directions-service)
           (gen-new-renderers owner transit-journey)
