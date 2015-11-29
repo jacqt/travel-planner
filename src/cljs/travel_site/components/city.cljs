@@ -38,16 +38,21 @@
     (render [_]
       (html [:li
              [:b (:instructions transit-step)]
-             [:i (str " (" (-> transit-step :distance :text) " - " (-> transit-step :duration :text) ")")]
+             [:i (str
+                   " ("
+                   (-> transit-step :distance :text)
+                   " - "
+                   (-> transit-step :duration :text)
+                   (if (= "TRANSIT" (:travel_mode transit-step))
+                     (str  " - " (-> transit-step :transit :num_stops) " stops"))
+                   ")")]
              (when (= "TRANSIT" (:travel_mode transit-step))
                [:div
                 [:div
                  "Take the " (-> transit-step :transit :line :short_name)
                  " from "
-                 (-> transit-step :transit :departure_stop :name) " to "
-                 (-> transit-step :transit :arrival_stop :name)
-                 [:i " (" (-> transit-step :transit :num_stops) " stops)"]]
-                ])]))))
+                 [:b (-> transit-step :transit :departure_stop :name)] " to "
+                 [:b (-> transit-step :transit :arrival_stop :name)]]])]))))
 
 (defn transit-directions-view [transit-directions owner]
   (reify
@@ -347,5 +352,5 @@
                 (om/build attraction-map-view [current-city journey transit-journey true])] ]
               [:div {:class "ui fourteen wide column row basic segment final-directions"}
                [:div {:class "fourteen wide column"}
-                (om/build transit-view transit-journey) ]]
+                (om/build transit-view transit-journey)]]
               ]]))))
