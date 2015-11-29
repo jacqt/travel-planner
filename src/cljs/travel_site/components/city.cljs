@@ -94,8 +94,21 @@
                                                               {:edit-key :address
                                                                :coords-key :coords
                                                                :className "address-fields" ;; TODO - rename className -> class
-                                                               :placeholder-text "End address"}])]]
-               [:div {:class "field"}]]]]))))
+                                                               :placeholder-text "End address"}])]]]
+              [:div {:class "inline fields"}
+               [:div {:class "sixteen wide field"}
+                [:div {:class "ui fluid input time-input"}
+                 (om/build inputs/datetime-picker-input [(-> journey :start-place)
+                                                         {:edit-key :time
+                                                          :coords-key :coords
+                                                          :className "time-fields" ;;TODO - rename className -> class
+                                                          :placeholder-text "Start time"}])]
+                [:div {:class "ui fluid input time-input"}
+                 (om/build inputs/datetime-picker-input [(-> journey :start-place)
+                                                         {:edit-key :time
+                                                          :coords-key :coords
+                                                          :className "time-fields" ;;TODO - rename className -> class
+                                                          :placeholder-text "End time"}])]]]]]))))
 
 
 ;; Functions for the map view.

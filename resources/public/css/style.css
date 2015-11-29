@@ -50,8 +50,20 @@ h1.ui.inverted.header::selection {
   margin: 0;
 }
 
-.city-view .attractions-selector-view .form .fields .field .address-input input {
+.city-view .attractions-selector-view .form .fields .field .time-input {
+  margin: 0;
+}
+
+.city-view .attractions-selector-view .form .fields .field .time-input .time-fields {
+  width: 100%;
+}
+
+.city-view .attractions-selector-view .form .fields .field input {
   border-radius: 0;
+}
+
+.city-view .attractions-selector-view .form .fields .field .twelve.wide.field {
+  padding: 0;
 }
 
 .city-view .all-attractions-view .attraction-card-view {

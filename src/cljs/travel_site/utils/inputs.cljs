@@ -3,6 +3,7 @@
             [om.dom :as dom :include-macros true]
             [exicon.semantic-ui]
             [sablono.core :refer-macros [html]]
+            [cljsjs.bootstrap-timepicker]
             [cljsjs.moment]
             [cljsjs.jquery]
             [cljsjs.jquery-ui]))
@@ -107,6 +108,54 @@
     parent-state edit-key
     (fn [_] (update-timestring-func (edit-key parent-state) update-value))))
 
+;; Generic timepicker component that uses the bootstrap timepicker library
+;; Same API as the editable-input component
+(defn timepicker-input [[parent-state {:keys [className min-date placeholder-text edit-key]}] owner]
+  {:pre [(some? parent-state)]}
+  (reify
+
+    om/IInitState
+    (init-state [_]
+      {:caret-position 0})
+
+    om/IDidMount
+    (did-mount [_]
+      (let
+        [timepicker
+         (->
+           owner om/get-node js/$.
+           (.timepicker
+             #js {:minuteStep 5
+                  :showInputs false
+                  :disableFocus true
+                  :template false }))]
+        (.on
+          timepicker
+          "changeTime.timepicker"
+          (fn [e]
+            (on-time-change parent-state edit-key update-timestring-time (.val timepicker))
+            ))))
+
+    om/IShouldUpdate
+    (should-update [this [next-props _] next-state]
+      (let [cur-value (-> owner om/get-node .-value)
+            prev-value (-> next-props edit-key extract-time) ]
+        (and
+          (not (= prev-value cur-value))
+          (not (= prev-value (.join (.split cur-value ":") ":0"))))))
+    ;om/IDidUpdate
+    ;(did-update [_ _ prev-state]
+      ;(-> owner om/get-node js/$.  (.caret (:caret-position prev-state))))
+
+    om/IRenderState
+    (render-state [this state]
+      (dom/input
+        #js {:className className
+             :onChange #(do
+                          (on-time-change parent-state edit-key update-timestring-time (.. % -target -value)))
+             :value (-> parent-state edit-key extract-time)
+             :type "text" }))))
+
 ;; Generic datepicker component that uses jquery-ui for the calendar view
 ;; Same API as the editable-input component above along with the min-date parameter
 (defn datepicker-input [[parent-state {:keys [className min-date placeholder-text edit-key]}] owner]
@@ -137,3 +186,24 @@
              :placeholder placeholder-text
              :value (-> parent-state edit-key extract-date)
              :type "text" }))))
+
+;; Generic date and time picker. Combines the date picker and time picker components above into one
+;; Similar API to the editable-input component
+(defn datetime-picker-input [[parent-state {:keys [className timezone min-date placeholder-text edit-key]}] owner]
+  (:pre [some? parent-state])
+  (reify
+    om/IRenderState
+    (render-state [this state]
+      (dom/div
+        #js {:className (str "fluid two fields " className) }
+        (dom/div
+          #js {:className "twelve wide field"}
+          (om/build datepicker-input [parent-state {:edit-key edit-key
+                                                    :className "start-time-input"
+                                                    :min-date min-date
+                                                    :placeholder-text placeholder-text}]))
+        (dom/div
+          #js {:className "four wide field"}
+          (om/build timepicker-input [parent-state {:edit-key edit-key
+                                                    :className "start-time-input"
+                                                    :placeholder-text placeholder-text}]))))))
