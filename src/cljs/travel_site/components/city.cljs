@@ -32,6 +32,17 @@
 (defn get-end-location [transit-directions]
   (-> transit-directions :directions :routes (get 0) :legs (get 0) :end_location))
 
+(defn transit-step-view [transit-step owner]
+  (reify
+    om/IRender
+    (render [_]
+      (html [:li
+             [:b (:instructions transit-step)]
+             [:i (str " (" (-> transit-step :distance :text) " - " (-> transit-step :duration :text) ")")]
+             (when (= "TRANSIT" (:travel_mode transit-step))
+               [:div
+                (-> transit-step :transit :departure_stop :name) " - "
+                (-> transit-step :transit :arrival_stop :name)])]))))
 
 (defn transit-directions-view [transit-directions owner]
   (reify
@@ -44,8 +55,7 @@
                  (:start_name transit-directions)
                  [:div {:class "sub header"} (:end_name transit-directions)]]]
                [:ul {:class "transit-steps"}
-                (map #(html [:li (:instructions %)])
-                     (:steps directions))]])))))
+                (om/build-all transit-step-view (:steps directions))]])))))
 
 (defn transit-view [transit-journey owner]
   (reify
@@ -297,6 +307,7 @@
     ;; Perhaps better to put it in a different component...
     om/IDidUpdate
     (did-update [_ prev-props _]
+      (.sticky (.find (js/$. (om/get-node owner)) ".stickied-map")) ;; Hack to prevent stickied map from getting "stuck"
       (when-not (journey-same? journey (:journey prev-props))
         (update-journey-plan owner)
         (router/go-to-hash
