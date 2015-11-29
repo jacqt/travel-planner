@@ -36,13 +36,19 @@
   (reify
     om/IRender
     (render [_]
+      (js/console.log (clj->js transit-step))
       (html [:li
              [:b (:instructions transit-step)]
              [:i (str " (" (-> transit-step :distance :text) " - " (-> transit-step :duration :text) ")")]
              (when (= "TRANSIT" (:travel_mode transit-step))
                [:div
-                (-> transit-step :transit :departure_stop :name) " - "
-                (-> transit-step :transit :arrival_stop :name)])]))))
+                [:div
+                 "Take the " (-> transit-step :transit :line :short_name)
+                 " from "
+                 (-> transit-step :transit :departure_stop :name) " to "
+                 (-> transit-step :transit :arrival_stop :name)
+                 [:i " (" (-> transit-step :transit :num_stops) " stops)"]]
+                ])]))))
 
 (defn transit-directions-view [transit-directions owner]
   (reify
