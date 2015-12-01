@@ -8,13 +8,21 @@
             [travel-site.router :as router]
             [travel-site.utils.inputs :as inputs]
             [travel-site.utils.http :as http]
+            [travel-site.utils.util-funcs :as util-funcs]
             [travel-site.utils.constants :as constants]
             [travel-site.models :as models]
             [travel-site.components.attractions :as attractions]))
 
 ;; Various util functions
 (def colors (flatten (repeat ["green" "blue" "#66CD00" "#03A89E" "#83F52C" "#4C7064"])))
-(def widths (flatten (repeat [8.0 6.0 4.0])))
+(def widths (flatten (repeat [6.0 4.0])))
+
+(defn strict-map [map-func map-over]
+  (reduce
+    (fn [_ v]
+      (map-func v))
+    []
+    map-over))
 
 (defn geojson->goog-latlng [[lng lat]]
   (js/google.maps.LatLng. lat lng))
@@ -25,6 +33,27 @@
 (defn get-end-location [transit-directions]
   (-> transit-directions :directions :routes (get 0) :legs (get 0) :end_location))
 
+(defn transit-step-view [transit-step owner]
+  (reify
+    om/IRender
+    (render [_]
+      (html [:li
+             [:b (:instructions transit-step)]
+             [:i (str
+                   " ("
+                   (-> transit-step :distance :text)
+                   " - "
+                   (-> transit-step :duration :text)
+                   (if (= "TRANSIT" (:travel_mode transit-step))
+                     (str  " - " (-> transit-step :transit :num_stops) " stops"))
+                   ")")]
+             (when (= "TRANSIT" (:travel_mode transit-step))
+               [:div
+                [:div
+                 "Take the " (-> transit-step :transit :line :short_name)
+                 " from "
+                 [:b (-> transit-step :transit :departure_stop :name)] " to "
+                 [:b (-> transit-step :transit :arrival_stop :name)]]])]))))
 
 (defn transit-directions-view [transit-directions owner]
   (reify
@@ -37,8 +66,7 @@
                  (:start_name transit-directions)
                  [:div {:class "sub header"} (:end_name transit-directions)]]]
                [:ul {:class "transit-steps"}
-                (map #(html [:li (:instructions %)])
-                     (:steps directions))]])))))
+                (om/build-all transit-step-view (:steps directions))]])))))
 
 (defn transit-view [transit-journey owner]
   (reify
@@ -67,8 +95,21 @@
                                                               {:edit-key :address
                                                                :coords-key :coords
                                                                :className "address-fields" ;; TODO - rename className -> class
-                                                               :placeholder-text "End address"}])]]
-               [:div {:class "field"}]]]]))))
+                                                               :placeholder-text "End address"}])]]]
+              [:div {:class "inline fields"}
+               [:div {:class "sixteen wide field"}
+                [:div {:class "ui fluid input time-input"}
+                 (om/build inputs/datetime-picker-input [(-> journey :start-place)
+                                                         {:edit-key :time
+                                                          :coords-key :coords
+                                                          :className "time-fields" ;;TODO - rename className -> class
+                                                          :placeholder-text "Start time"}])]
+                [:div {:class "ui fluid input time-input"}
+                 (om/build inputs/datetime-picker-input [(-> journey :start-place)
+                                                         {:edit-key :time
+                                                          :coords-key :coords
+                                                          :className "time-fields" ;;TODO - rename className -> class
+                                                          :placeholder-text "End time"}])]]]]]))))
 
 
 ;; Functions for the map view.
@@ -131,25 +172,47 @@
     waypoints
     all-directions))
 
-(defn create-renderers [owner transit-directions]
+(defn construct-renderer [index directions google-map]
+  (let [renderer (js/google.maps.DirectionsRenderer.
+                   #js {:polylineOptions #js {:strokeColor (nth colors index)
+                                              :strokeOpacity 0.6
+                                              :geodesic true
+                                              :strokeWeight (nth widths index)}
+                        :suppressInfoWindows true
+                        :suppressMarkers true}) ]
+    (.setMap renderer google-map)
+    (.setDirections renderer (clj->js (-> directions :directions clj->js)))
+    renderer))
+
+(defn construct-polyline [index directions google-map]
+  (let [polyline (js/google.maps.Polyline.
+                   #js {:path #js []
+                        :strokeColor (nth colors index)
+                        :strokeOpacity 0.6
+                        :geodesic true
+                        :strokeWeight (nth widths index)})]
+    (.setMap polyline google-map)
+    (strict-map
+      (fn [step]
+        (strict-map
+          (fn [segment]
+            (-> polyline .getPath (.push (clj->js segment))))
+          (:path step)))
+      (-> directions :directions :routes (get 0) :legs (get 0) :steps))
+    polyline))
+
+
+(defn create-renderers [owner transit-directions show-vehicle-icons]
   (reduce
     (fn [renderers [index directions]]
-      (let [renderer (js/google.maps.DirectionsRenderer.
-                       #js {:polylineOptions #js {:strokeColor (nth colors index)
-                                                  :strokeOpacity 0.6
-                                                  :geodesic true
-                                                  :icons #js []
-                                                  :strokeWeight (nth widths index)}
-                            :suppressInfoWindows true
-                            :suppressMarkers true})]
-        (.setMap renderer (om/get-state owner :google-map))
-        (.setDirections renderer (clj->js (-> directions :directions clj->js)))
-        (conj renderers renderer)))
+      (if show-vehicle-icons
+        (conj renderers (construct-renderer index directions (om/get-state owner :google-map)))
+        (conj renderers (construct-polyline index directions (om/get-state owner :google-map)))))
     []
     (map vector (range) transit-directions)))
 
-(defn gen-new-renderers [owner transit-directions]
-  (let [all-renderers (create-renderers owner transit-directions)]
+(defn gen-new-renderers [owner transit-directions show-vehicle-icons]
+  (let [all-renderers (create-renderers owner transit-directions show-vehicle-icons)]
     (om/set-state! owner :all-renderers all-renderers)))
 
 (defn create-markers [owner transit-journey]
@@ -193,6 +256,7 @@
         waypoints (attractions/get-waypoints
                     (-> journey :waypoint-attraction-ids)
                     (-> current-city :attractions :data)) ]
+    (js/console.log (clj->js journey))
     (when (valid-journey? journey)
       (.route
         (om/get-state owner :google-directions-service)
@@ -216,7 +280,9 @@
                         transit-journey
                         (make-transit-journey waypoints journey partial-directions)))))))))))))
 
-(defn attraction-map-view [[current-city journey transit-journey] owner]
+(def throttled-update-journey-plan (util-funcs/throttle update-journey-plan 1000))
+
+(defn attraction-map-view [[current-city journey transit-journey show-vehicle-icons] owner]
   (reify
     ;; initialize the google maps objects and store them as local state to the map view
     om/IDidMount
@@ -237,7 +303,7 @@
                                 :zoom 12})]
           (om/set-state! owner :google-map google-map)
           (om/set-state! owner :google-directions-service google-directions-service)
-          (gen-new-renderers owner transit-journey)
+          (gen-new-renderers owner transit-journey show-vehicle-icons)
           (gen-new-markers owner transit-journey))))
 
     ;; recompute the route upon journey update
@@ -248,7 +314,7 @@
           (when-not (= transit-journey prev-transit-journey)
             (remove-old-markers owner)
             (remove-old-renderers owner)
-            (gen-new-renderers owner transit-journey)
+            (gen-new-renderers owner transit-journey show-vehicle-icons)
             (gen-new-markers owner transit-journey)))
         (if-not (= (-> city :city :data :center :coordinates) (-> prev-city :city :data :center :coordinates))
           (.setCenter (om/get-state owner :google-map) (geojson->goog-latlng (-> current-city :city :data :center :coordinates))))))
@@ -263,7 +329,7 @@
     (did-mount [_]
       (let [google-directions-service (js/google.maps.DirectionsService.)]
         (om/set-state! owner :google-directions-service google-directions-service))
-      (update-journey-plan owner)
+      (throttled-update-journey-plan owner)
       (.sticky (.find (js/$. (om/get-node owner)) ".stickied-map")))
 
     ;; A bit hacky, but register a listener on the root city component whose job is to sync
@@ -271,8 +337,9 @@
     ;; Perhaps better to put it in a different component...
     om/IDidUpdate
     (did-update [_ prev-props _]
+      (.sticky (.find (js/$. (om/get-node owner)) ".stickied-map")) ;; Hack to prevent stickied map from getting "stuck"
       (when-not (journey-same? journey (:journey prev-props))
-        (update-journey-plan owner)
+        (throttled-update-journey-plan owner)
         (router/go-to-hash
           (http/encode-url-parameters
             (str "/city/" (-> current-city :city :data :id))
@@ -293,14 +360,14 @@
                 [:div {:class "ui padded basic sticky stickied-map segment"}
                  [:div {:class "ui segment preview-directions"}
                   [:h3 "Route preview"]
-                  (om/build attraction-map-view [current-city journey transit-journey])]] ]
+                  (om/build attraction-map-view [current-city journey transit-journey false])]] ]
                [:div {:class "twelve wide column"}
                 (om/build attractions/all-attractions-view [(-> current-city :attraction_categories :data)
                                                             (-> current-city :attractions :data)])]]
               [:div {:class "ui fourteen wide column row basic segment final-directions"}
                [:div {:class "fourteen wide column"}
-                (om/build attraction-map-view [current-city journey transit-journey])] ]
+                (om/build attraction-map-view [current-city journey transit-journey true])] ]
               [:div {:class "ui fourteen wide column row basic segment final-directions"}
                [:div {:class "fourteen wide column"}
-                (om/build transit-view transit-journey) ]]
+                (om/build transit-view transit-journey)]]
               ]]))))
