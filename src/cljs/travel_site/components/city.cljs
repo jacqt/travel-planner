@@ -257,7 +257,6 @@
         waypoints (attractions/get-waypoints
                     (-> journey :waypoint-attraction-ids)
                     (-> current-city :attractions :data)) ]
-    (js/console.log (clj->js journey))
     (when (valid-journey? journey)
       (.route
         (om/get-state owner :google-directions-service)
@@ -339,6 +338,24 @@
     (render-state [this state]
       (html [:div {:class "city-map-container"} "This is where the map should go"]))))
 
+(defn attraction-map-legend-view [transit-journey owner]
+  (reify
+    om/IRender
+    (render [_]
+      (let [legend-tuples (map vector
+                               "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                               (flatten (vector
+                                          (:start_name (first transit-journey))
+                                          (map #(:end_name %) transit-journey))))]
+        (html [:table {:class "ui celled table"}
+               [:thead
+                [:th "Symbol"]
+                [:th "Name"]]
+               (map #(html [:tr
+                            [:td (get % 0)]
+                            [:td (get % 1)]])
+                    legend-tuples)])))))
+
 (defn city-view [{:keys [current-city journey transit-journey]} owner]
   (reify
     om/IDidMount
@@ -382,8 +399,8 @@
                                                             (-> current-city :attractions :data)])]]
               [:div {:class "ui fourteen wide column row basic segment final-directions"}
                [:div {:class "fourteen wide column"}
-                (om/build attraction-map-view [current-city journey transit-journey true])] ]
+                (om/build attraction-map-view [current-city journey transit-journey true])
+                (om/build attraction-map-legend-view transit-journey)]]
               [:div {:class "ui fourteen wide column row basic segment final-directions"}
                [:div {:class "fourteen wide column"}
-                (om/build transit-view transit-journey)]]
-              ]]))))
+                (om/build transit-view transit-journey)]]]]))))
