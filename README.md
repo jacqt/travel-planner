@@ -30,7 +30,7 @@ in 21.36 seconds.`, you're ready to go. Browse to
   * Add animations and polish
   * Add info window to the markers (legend)
   * Change url encoding so that it looks something like ?start_address=Hyde Park&end_address=Imperial COllege&waypoint-ids[]=1
-  * Batch requests to Google Directions API
+  * ~~Batch requests to Google Directions API~~
 
 ## Chestnut
 
