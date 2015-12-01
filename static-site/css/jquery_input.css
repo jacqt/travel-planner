@@ -1,0 +1,8 @@
+.timepicker-container {
+  display: flex;
+}
+
+.timepicker-container .colon {
+  line-height: 30px;
+  display: flex;
+}

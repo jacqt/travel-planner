@@ -1,0 +1,186 @@
+.ui-datepicker {
+    border: 1px solid #c4c4c4;
+    border-radius: 2px;
+    box-shadow: 0 0 9px 5px rgba(0, 0, 0, 0.05);
+    background-color: #fff;
+    z-index: 9999999999;
+    display: none;
+    width: 244px;
+    -webkit-transform: translateZ(1px)
+}
+.ui-datepicker .ui-busy-date {
+    background-color: #f5f5f5
+}
+.ui-datepicker .ui-busy-date-exp {
+    color: #dce0e0;
+    background-color: #eeeeef
+}
+.ui-datepicker .ui-condition-not-met-exp {
+    color: #656a5c;
+    background-color: #fff;
+    opacity: 0.6
+}
+.ui-datepicker .ui-condition-not-met-exp:hover {
+    opacity: 0.9
+}
+.ui-datepicker-backdrop {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 9999999998
+}
+@media (max-width: 767px) {
+    .ui-datepicker-backdrop {
+        background: rgba(0, 0, 0, 0.3)
+    }
+}
+.datepicker-tooltip {
+    z-index: 9999999999;
+    -webkit-transform: translateZ(1px)
+}
+.ui-datepicker-calendar {
+    background: transparent
+}
+.ui-datepicker-calendar td {
+    border: 1px solid #ebeceb;
+    padding: 0;
+    position: relative
+}
+.ui-datepicker-calendar td:first-child,
+.ui-datepicker-calendar td:last-child {
+    border-left: 0
+}
+.ui-datepicker-calendar th {
+    text-align: center;
+    color: #82888a;
+    font-size: 0.8em
+}
+a.ui-state-default,
+span.ui-state-default {
+    display: block;
+    padding: 6px 0px;
+    text-align: center;
+    font-weight: bold;
+    width: 32px;
+    border: 1px solid transparent;
+    cursor: default
+}
+a.ui-state-default:hover,
+span.ui-state-default:hover {
+    text-decoration: none
+}
+a.ui-state-default.ui-state-hover,
+a.ui-state-default.ui-state-active,
+.ui-datepicker-current-day a.ui-state-default.ui-state-highlight {
+    background-color: #ff5a5f;
+    color: white;
+    border-color: #ff5a5f;
+    margin: -1px;
+    width: 34px
+}
+a.ui-state-default.ui-state-hover:hover,
+a.ui-state-default.ui-state-active:hover,
+a.ui-state-default.ui-state-highlight:hover {
+    opacity: 0.9
+}
+.ui-datepicker-prev,
+.ui-datepicker-next {
+    cursor: pointer;
+    padding: 5px 20px;
+    margin: -5px -20px
+}
+.ui-datepicker-prev:before,
+.ui-datepicker-next:before {
+    font-family: Airglyphs, sans-serif;
+    font-weight: normal;
+    font-style: normal;
+    line-height: 1;
+    color: #82888a;
+    font-size: 1.2em
+}
+.ui-datepicker-prev:hover,
+.ui-datepicker-prev:hover:before,
+.ui-datepicker-next:hover,
+.ui-datepicker-next:hover:before {
+    text-decoration: none
+}
+.ui-datepicker-prev {
+    float: left
+}
+.ui-datepicker-next {
+    float: right
+}
+.ui-datepicker-title {
+    text-align: center
+}
+a.ui-state-default {
+    color: #565a5c
+}
+span.ui-state-default {
+    color: #dce0e0
+}
+.ui-datepicker-header {
+    font-weight: bold;
+    padding: 15px
+}
+.ui-datepicker-buttonpane {
+    padding: 5px;
+    font-size: 12px
+}
+.ui-datepicker-close {
+    color: #ff5a5f;
+    background: transparent;
+    border: 0;
+    text-align: left;
+    width: 40%
+}
+.ui-datepicker-additional-info {
+    position: relative;
+    top: 2px;
+    float: right;
+    color: #82888a;
+    margin-bottom: 10px;
+    text-align: right;
+    padding-right: 5px;
+    width: 60%
+}
+.ui-datepicker-calendar td.ui-datepicker-week-end {
+    width: 31px
+}
+.ui-datepicker-calendar td:first-child {
+    border-left: none
+}
+.ui-datepicker-calendar td:first-child a.ui-state-default.ui-state-highlight,
+.ui-datepicker-calendar td:first-child a.ui-state-default.ui-state-hover,
+.ui-datepicker-calendar td:first-child a.ui-state-default.ui-state-active,
+.ui-datepicker-calendar td:first-child a.ui-state-default.ui-state-highlight {
+    border-left: none;
+    margin: 0;
+    width: 33px
+}
+.ui-datepicker-calendar td:last-child {
+    border-right: none;
+    margin-right: 0
+}
+.ui-datepicker-calendar td:last-child a.ui-state-default.ui-state-highlight,
+.ui-datepicker-calendar td:last-child a.ui-state-default.ui-state-hover,
+.ui-datepicker-calendar td:last-child a.ui-state-default.ui-state-active,
+.ui-datepicker-calendar td:last-child a.ui-state-default.ui-state-highlight {
+    border-right: none;
+    margin: 0;
+    width: 33px
+}
+.ui-datepicker {
+    -moz-box-sizing: content-box;
+    -webkit-box-sizing: content-box;
+    box-sizing: content-box
+}
+.ui-datepicker-calendar tr td span,
+.ui-datepicker-calendar tr th span,
+.ui-datepicker-calendar tr td a {
+    -moz-box-sizing: content-box;
+    -webkit-box-sizing: content-box;
+    box-sizing: content-box
+}
