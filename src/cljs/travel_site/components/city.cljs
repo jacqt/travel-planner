@@ -95,21 +95,7 @@
                                                               {:edit-key :address
                                                                :coords-key :coords
                                                                :className "address-fields" ;; TODO - rename className -> class
-                                                               :placeholder-text "End address"}])]]]
-              [:div {:class "inline fields"}
-               [:div {:class "sixteen wide field"}
-                [:div {:class "ui fluid input time-input"}
-                 (om/build inputs/datetime-picker-input [(-> journey :start-place)
-                                                         {:edit-key :time
-                                                          :coords-key :coords
-                                                          :className "time-fields" ;;TODO - rename className -> class
-                                                          :placeholder-text "Start time"}])]
-                [:div {:class "ui fluid input time-input"}
-                 (om/build inputs/datetime-picker-input [(-> journey :start-place)
-                                                         {:edit-key :time
-                                                          :coords-key :coords
-                                                          :className "time-fields" ;;TODO - rename className -> class
-                                                          :placeholder-text "End time"}])]]]]]))))
+                                                               :placeholder-text "End address"}])]]]]]))))
 
 
 ;; Functions for the map view.
@@ -318,7 +304,8 @@
           (om/set-state! owner :google-directions-service google-directions-service)
           (gen-new-renderers owner transit-journey show-vehicle-icons)
           (gen-new-markers owner transit-journey)
-          (fit-map-to-markers (om/get-state owner :google-map) (om/get-state owner :all-markers)))))
+          (if (valid-journey? journey)
+            (fit-map-to-markers (om/get-state owner :google-map) (om/get-state owner :all-markers))))))
 
     ;; recompute the route upon journey update
     om/IDidUpdate
@@ -400,7 +387,9 @@
               [:div {:class "ui fourteen wide column row basic segment final-directions"}
                [:div {:class "fourteen wide column"}
                 (om/build attraction-map-view [current-city journey transit-journey true])
-                (om/build attraction-map-legend-view transit-journey)]]
+                (if (valid-journey? journey)
+                  (om/build attraction-map-legend-view transit-journey))]]
               [:div {:class "ui fourteen wide column row basic segment final-directions"}
                [:div {:class "fourteen wide column"}
-                (om/build transit-view transit-journey)]]]]))))
+                (if (valid-journey? journey)
+                  (om/build transit-view transit-journey))]]]]))))
