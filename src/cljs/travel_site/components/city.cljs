@@ -178,6 +178,7 @@
                                               :strokeOpacity 0.6
                                               :geodesic true
                                               :strokeWeight (nth widths index)}
+                        :preserveViewport true
                         :suppressInfoWindows true
                         :suppressMarkers true}) ]
     (.setMap renderer google-map)
@@ -280,7 +281,20 @@
                         transit-journey
                         (make-transit-journey waypoints journey partial-directions)))))))))))))
 
-(def throttled-update-journey-plan (util-funcs/throttle update-journey-plan 1000))
+(defn fit-map-to-markers [google-map markers]
+  (.fitBounds
+    google-map
+    (reduce
+      (fn [partial-bounds marker]
+        (if (some? (.getPosition marker))
+          (.extend
+            partial-bounds
+            (.getPosition marker)))
+        partial-bounds)
+      (js/google.maps.LatLngBounds.)
+      markers)))
+
+(def throttled-update-journey-plan (util-funcs/throttle update-journey-plan 3000))
 
 (defn attraction-map-view [[current-city journey transit-journey show-vehicle-icons] owner]
   (reify
@@ -304,7 +318,8 @@
           (om/set-state! owner :google-map google-map)
           (om/set-state! owner :google-directions-service google-directions-service)
           (gen-new-renderers owner transit-journey show-vehicle-icons)
-          (gen-new-markers owner transit-journey))))
+          (gen-new-markers owner transit-journey)
+          (fit-map-to-markers (om/get-state owner :google-map) (om/get-state owner :all-markers)))))
 
     ;; recompute the route upon journey update
     om/IDidUpdate
@@ -315,7 +330,8 @@
             (remove-old-markers owner)
             (remove-old-renderers owner)
             (gen-new-renderers owner transit-journey show-vehicle-icons)
-            (gen-new-markers owner transit-journey)))
+            (gen-new-markers owner transit-journey)
+            (fit-map-to-markers (om/get-state owner :google-map) (om/get-state owner :all-markers))))
         (if-not (= (-> city :city :data :center :coordinates) (-> prev-city :city :data :center :coordinates))
           (.setCenter (om/get-state owner :google-map) (geojson->goog-latlng (-> current-city :city :data :center :coordinates))))))
 
