@@ -6,7 +6,7 @@
   align-items: center;
 }
 .masthead.segment.landing-page {
-  background-image: url("https://a0.muscache.com/ic/discover/397?interpolation=lanczos-none&output-format=jpg&output-quality=70&v=33b4f2&downsize=1300:730px") !important;
+  background-image: url("https://a1.muscache.com/ic/discover/1175?interpolation=lanczos-none&output-format=jpg&output-quality=70&v=33b4f2&downsize=1300px:750px") !important;
 }
 
 h1.ui.inverted.header::selection {
@@ -61,6 +61,10 @@ h1.ui.inverted.header::selection {
   margin: 0;
 }
 
+.city-view .attractions-selector-view .form .fields .field .go-button {
+  border-radius: 0px;
+}
+
 .city-view .attractions-selector-view .form .fields .field .time-input {
   margin: 0;
 }
@@ -77,9 +81,6 @@ h1.ui.inverted.header::selection {
   padding: 0;
 }
 
-.city-view .all-attractions-view .attraction-card-view {
-  cursor: default !important;
-}
 
 .city-view .all-attractions-view .attraction-card-view .image {
   background-position: 50%;
@@ -111,3 +112,9 @@ h1.ui.inverted.header::selection {
     width: 100% !important;
   }
 }
+
+
+.footer.segment {
+  padding: 5em 0em;
+}
+
