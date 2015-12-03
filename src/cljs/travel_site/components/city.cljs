@@ -378,7 +378,9 @@
     ;; Perhaps better to put it in a different component...
     om/IDidUpdate
     (did-update [_ prev-props _]
-      (.sticky (.find (js/$. (om/get-node owner)) ".stickied-map")) ;; Hack to prevent stickied map from getting "stuck"
+      (let [stickied-map (.find (js/$. (om/get-node owner)) ".stickied-map")]
+        (if (.is stickied-map ":visible")
+          (.sticky (.find (js/$. (om/get-node owner)) ".stickied-map")))) ;; Hack to prevent stickied map from getting "stuck"
       (when-not (journey-same? journey (:journey prev-props))
         (throttled-update-journey-plan owner)
         (router/go-to-hash
