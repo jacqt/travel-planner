@@ -31,6 +31,17 @@ in 21.36 seconds.`, you're ready to go. Browse to
   * Add info window to the markers (legend)
   * Change url encoding so that it looks something like ?start_address=Hyde Park&end_address=Imperial COllege&waypoint-ids[]=1
   * ~~Batch requests to Google Directions API~~
+  * Putting legend on the side
+  * Asking users about map misalignment
+
+## FEATURES
+
+  * Adding tags
+    * Get out of the city
+    * Rainy day
+  * Internal subreddit
+  * Filter by london radius
+  * Custom addresses
 
 ## Chestnut
 

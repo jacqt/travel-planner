@@ -263,8 +263,8 @@
   (let [{:keys [current-city journey transit-journey]} (om/get-props owner)
         waypoints (attractions/get-waypoints
                     (-> journey :waypoint-attraction-ids)
-                    (-> current-city :attractions :data)) ]
-    (when (valid-journey? journey)
+                    (-> current-city :attractions :data))]
+    (when (valid-journey? journey) ;; just a safety check
       (.route
         (om/get-state owner :google-directions-service)
         #js {:origin (-> journey :start-place :coords clj->js)
@@ -300,7 +300,7 @@
       (js/google.maps.LatLngBounds.)
       markers)))
 
-(def throttled-update-journey-plan (util-funcs/throttle update-journey-plan 3000))
+(def throttled-update-journey-plan (util-funcs/throttle update-journey-plan 5000))
 
 (defn attraction-map-view [[current-city journey transit-journey show-vehicle-icons] owner]
   (reify
@@ -370,7 +370,8 @@
     (did-mount [_]
       (let [google-directions-service (js/google.maps.DirectionsService.)]
         (om/set-state! owner :google-directions-service google-directions-service))
-      (throttled-update-journey-plan owner)
+      (if (valid-journey? journey)
+        (throttled-update-journey-plan owner))
       (.sticky (.find (js/$. (om/get-node owner)) ".stickied-map")))
 
     ;; A bit hacky, but register a listener on the root city component whose job is to sync
@@ -382,7 +383,8 @@
         (if (.is stickied-map ":visible")
           (.sticky (.find (js/$. (om/get-node owner)) ".stickied-map")))) ;; Hack to prevent stickied map from getting "stuck"
       (when-not (journey-same? journey (:journey prev-props))
-        (throttled-update-journey-plan owner)
+        (if (valid-journey? journey)
+          (throttled-update-journey-plan owner))
         (router/go-to-hash
           (http/encode-url-parameters
             (str "/city/" (-> current-city :city :data :id))
