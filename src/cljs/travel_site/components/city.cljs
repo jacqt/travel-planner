@@ -80,9 +80,11 @@
   (reify
     om/IRender
     (render [_]
-      (html [:div {:class "ui basic segment attractions-selector-view"}
-             [:div {:class "ui form twelve wide"}
-              [:div {:class "inline fields"}
+      (html [:div {:class "ui basic segment fourteen wide attractions-selector-view"}
+             [:div {:class "ui form twelve wide grid column"}
+
+              ;; Computer only - put the inputs side by side
+              [:div {:class "inline fields computer tablet only row"}
                [:div {:class "sixteen wide field"}
                 [:div {:class "ui fluid input address-input"}
                  (om/build inputs/address-autocomplete-input [(-> journey :start-place)
@@ -95,7 +97,24 @@
                                                               {:edit-key :address
                                                                :coords-key :coords
                                                                :className "address-fields" ;; TODO - rename className -> class
-                                                               :placeholder-text "End address"}])]]]]]))))
+                                                               :placeholder-text "End address"}])]]]
+
+              ;; mobile and tablet - put the inputs on top of each other
+              [:div {:class "inline fields ui mobile only row"}
+               [:div {:class "sixteen wide field"}
+                [:div {:class "ui fluid input address-input"}
+                 (om/build inputs/address-autocomplete-input [(-> journey :start-place)
+                                                              {:edit-key :address
+                                                               :coords-key :coords
+                                                               :className "address-fields" ;;TODO - rename className -> class
+                                                               :placeholder-text "Start address"}])]]
+                [:div {:class "sixteen wide field"}
+                 [:div {:class "ui fluid input address-input"}
+                  (om/build inputs/address-autocomplete-input [(-> journey :end-place)
+                                                               {:edit-key :address
+                                                                :coords-key :coords
+                                                                :className "address-fields" ;; TODO - rename className -> class
+                                                                :placeholder-text "End address"}])]]]]]))))
 
 
 ;; Functions for the map view.
@@ -370,20 +389,33 @@
     om/IRenderState
     (render-state [this _]
       (html [:div {:class "city-view"}
-             [:div {:class "ui inverted vertical masthead center aligned segment"}
-              [:div {:class "ui text container"}
+             ;; Header of the page
+             [:div {:class "ui inverted vertical masthead center aligned segment"
+                    :style {:background-image (str "url(\"" (-> current-city :city :data :cover_photo_url) "\")")}}
+              [:div {:class "ui text container title"}
                [:h1 {:class "ui inverted header"} (str (-> current-city :city :data :name))]
-                (om/build attractions-selector-view [current-city journey transit-journey]) ]]
+               (om/build attractions-selector-view [current-city journey transit-journey])]]
+
+             ;; Body of the page
              [:div {:class "ui centered grid"}
               [:div {:class "sixteen wide column row"}
-               [:div {:class "four wide column"}
+
+               ;; The preview map only shows on computers
+               [:div {:class "four wide column computer only preview-container"}
                 [:div {:class "ui padded basic sticky stickied-map segment"}
                  [:div {:class "ui segment preview-directions"}
                   [:h3 "Route preview"]
                   (om/build attraction-map-view [current-city journey transit-journey false])]] ]
-               [:div {:class "twelve wide column"}
+
+               ;; Adjust the width depending on whether on a computer vs a tablet/mobile device
+               [:div {:class "twelve wide column computer only"}
+                (om/build attractions/all-attractions-view [(-> current-city :attraction_categories :data)
+                                                            (-> current-city :attractions :data)])]
+               [:div {:class "sixteen wide column tablet mobile only"}
                 (om/build attractions/all-attractions-view [(-> current-city :attraction_categories :data)
                                                             (-> current-city :attractions :data)])]]
+
+              ;; Display the big map
               [:div {:class "ui fourteen wide column row basic segment final-directions"}
                [:div {:class "fourteen wide column"}
                 (om/build attraction-map-view [current-city journey transit-journey true])

@@ -23,8 +23,8 @@
     om/IRenderState
     (render-state [this _]
       (html [:div {:class "pusher"}
-             [:div {:class "ui inverted vertical masthead center aligned segment"}
-              [:div {:class "ui text container"}
+             [:div {:class "ui inverted vertical masthead center aligned segment landing-page"}
+              [:div {:class "ui text container title"}
                [:h1 {:class "ui inverted header"} "Fiberboard"]
                [:h2 "Plan your trip to..."]
                (om/build-all city-button cities)]]]))))
