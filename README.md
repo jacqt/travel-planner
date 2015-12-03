@@ -45,4 +45,9 @@ in 21.36 seconds.`, you're ready to go. Browse to
 
 ## Chestnut
 
+## FEEDBACK
+
+  * Might have too many cards, maybe need to fold the events so that there's less content
+  * Make the add to journey bigger
+
 Created with [Chestnut](http://plexus.github.io/chestnut/) 0.8.1 (3acc5e81).
