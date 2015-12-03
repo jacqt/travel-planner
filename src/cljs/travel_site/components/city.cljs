@@ -16,6 +16,7 @@
 ;; Various util functions
 (def colors (flatten (repeat ["green" "blue" "#66CD00" "#03A89E" "#83F52C" "#4C7064"])))
 (def widths (flatten (repeat [6.0 4.0])))
+(def london-feb-5-2015-9am (js/Date. 2015 1 5 9 0 0 0))
 
 (defn strict-map [map-func map-over]
   (reduce
@@ -137,6 +138,7 @@
           google-directions-service
           #js {:origin start_location
                :destination end_location
+               :transitOptions #js {:departureTime london-feb-5-2015-9am}
                :travelMode (.. js/google -maps -TravelMode -TRANSIT)}
           (fn [response status]
             (put! response-channel {:leg-id leg-id
@@ -421,6 +423,7 @@
                 (om/build attraction-map-view [current-city journey transit-journey true])
                 (if (valid-journey? journey)
                   (om/build attraction-map-legend-view transit-journey))]]
+
               [:div {:class "ui fourteen wide column row basic segment final-directions"}
                [:div {:class "fourteen wide column"}
                 (if (valid-journey? journey)
