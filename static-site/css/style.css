@@ -5,9 +5,17 @@
   align-content: flex-start;
   align-items: center;
 }
+.masthead.segment.landing-page {
+  background-image: url("https://a0.muscache.com/ic/discover/397?interpolation=lanczos-none&output-format=jpg&output-quality=70&v=33b4f2&downsize=1300:730px") !important;
+}
 
 h1.ui.inverted.header::selection {
   color: #FFFFFF;
+}
+
+.masthead .ui.text.container.title {
+  margin: auto !important;
+  width: 100%!important;
 }
 
 .masthead .logo.item img {
@@ -45,6 +53,10 @@ h1.ui.inverted.header::selection {
   max-width: 800px;
 }
 
+.city-view .attractions-selector-view .ui.form.twelve.wide.grid {
+  margin: 0;
+}
+
 .city-view .attractions-selector-view .form .fields .field .address-input {
   margin: 0;
 }
@@ -76,4 +88,26 @@ h1.ui.inverted.header::selection {
 }
 
 .city-view .transit-view {
+}
+
+.city-view .preview-container {
+  padding-right: 0 !important;
+}
+
+.city-view .preview-container .stickied-map {
+  padding-right: 0 !important;
+}
+
+@media (max-width :767px) {
+  .city-view .attractions-selector-view {
+    width: 80% !important;
+  }
+
+  .city-view .ui.fourteen.wide.column.row.final-directions {
+    width: 100% !important;
+  }
+
+  .city-view .ui.fourteen.wide.column.row.final-directions .fourteen.wide.column {
+    width: 100% !important;
+  }
 }
