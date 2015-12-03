@@ -1,0 +1,2 @@
+ssh deployer@fiberboard_api.notifsta.com  "cd /srv/travel-planner && git pull && echo 'updated repo'"
+curl https://www.cloudflare.com/api_json.html -d 'a=fpurge_ts' -d 'tkn=d553c120d690b4aee78124b0ab4584f48f69a' -d 'email=dvdhsu@gmail.com' -d 'z=notifsta.com' -d 'v=1'
