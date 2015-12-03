@@ -64,23 +64,23 @@
     om/IRenderState
     (render-state [this _]
       (let [waypoint-attraction-ids (om/observe owner (models/waypoint-attraction-ids))]
-        (html [:div {:class "ui fluid centered card attraction-card-view"}
+        (html [:div {:class "ui fluid centered card attraction-card-view"
+                     :on-click #(do
+                                  (.transition (js/$. (om/get-node owner)) "bounce")
+                                  (if (attraction-selected? attraction waypoint-attraction-ids)
+                                    (remove-waypoint attraction)
+                                    (add-waypoint attraction)))
+                     }
                [:div {:class "image"
                       :style {:background-image (str "url( " (:image_url attraction) " )")}}]
                [:div {:class "content"}
                 [:div {:class "header"} (:name attraction)]
                 [:div {:class "description"} (:description attraction)]]
                (if (attraction-selected? attraction waypoint-attraction-ids)
-                 [:div {:class "ui bottom attached green button"
-                        :on-click #(do
-                                     (.transition (js/$. (om/get-node owner)) "bounce")
-                                     (remove-waypoint attraction))}
+                 [:div {:class "ui bottom attached green button"}
                   [:i {:class "check outline icon"}]
                   "Added!" ]
-                 [:div {:class "ui fluid blue button"
-                        :on-click #(do
-                                     (.transition (js/$. (om/get-node owner)) "bounce")
-                                     (add-waypoint attraction))}
+                 [:div {:class "ui bottom attached blue button"}
                   [:i {:class "plus outline icon"}]
                   "Add to journey"])])))))
 

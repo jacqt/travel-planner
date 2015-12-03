@@ -18,6 +18,12 @@
 (def widths (flatten (repeat [6.0 4.0])))
 (def london-feb-5-2015-9am (js/Date. 2015 1 5 9 0 0 0))
 
+(defn animate-scroll-to-offset [scroll-offset]
+  (-> "html, body" js/$. (.animate #js {:scrollTop scroll-offset})))
+
+(defn animate-scroll-to-element [element]
+  (animate-scroll-to-offset (-> element js/$. .offset (aget "top"))))
+
 (defn strict-map [map-func map-over]
   (reduce
     (fn [_ v]
@@ -98,7 +104,11 @@
                                                               {:edit-key :address
                                                                :coords-key :coords
                                                                :className "address-fields" ;; TODO - rename className -> class
-                                                               :placeholder-text "End address"}])]]]
+                                                               :placeholder-text "End address"}])]
+                [:div {:class "ui red button go-button"
+                       :on-click #(animate-scroll-to-offset 550)
+                       }
+                 "Go"]]]
 
               ;; mobile and tablet - put the inputs on top of each other
               [:div {:class "inline fields ui mobile only row"}
@@ -411,7 +421,10 @@
                 [:div {:class "ui padded basic sticky stickied-map segment"}
                  [:div {:class "ui segment preview-directions"}
                   [:h3 "Route preview"]
-                  (om/build attraction-map-view [current-city journey transit-journey false])]] ]
+                  (om/build attraction-map-view [current-city journey transit-journey false])
+                  [:div {:class "ui basic centered segment"
+                         :on-click #(animate-scroll-to-element (js/$. ".final-directions"))}
+                   [:a {:class "ui red button"} "Final Route" ]]]]]
 
                ;; Adjust the width depending on whether on a computer vs a tablet/mobile device
                [:div {:class "twelve wide column computer only"}
@@ -424,11 +437,12 @@
               ;; Display the big map
               [:div {:class "ui fourteen wide column row basic segment final-directions"}
                [:div {:class "fourteen wide column"}
+                [:h1 "Final Route"]
                 (om/build attraction-map-view [current-city journey transit-journey true])
                 (if (valid-journey? journey)
                   (om/build attraction-map-legend-view transit-journey))]]
 
-              [:div {:class "ui fourteen wide column row basic segment final-directions"}
+              [:div {:class "ui fourteen wide column row basic segment final-transit-directions"}
                [:div {:class "fourteen wide column"}
                 (if (valid-journey? journey)
                   (om/build transit-view transit-journey))]]]]))))

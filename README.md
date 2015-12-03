@@ -43,11 +43,31 @@ in 21.36 seconds.`, you're ready to go. Browse to
   * Filter by london radius
   * Custom addresses
 
-## Chestnut
-
 ## FEEDBACK
 
+Tina
   * Might have too many cards, maybe need to fold the events so that there's less content
   * Make the add to journey bigger
+  * It should be a step process? Should have a more structured layout.
+  * Because she didn't know that there would be a big map on the bottom, she was confused as to how she we get the final result
+  * Should add some indication that there is a final map at the very bottom with the details of the journey
 
-Created with [Chestnut](http://plexus.github.io/chestnut/) 0.8.1 (3acc5e81).
+Ashley
+  * Maybe add a go button
+  * Give user the freedom to select the order of journey
+  * Also add options to drive / walk / bike / etc.   
+  * Timing is very important - add closing and opening time
+  * How long it takes to get from one place to another place
+  * Multi-day?
+
+Michael
+  * Too hard?
+  * If I want to see multiple places, I want to be able to see them
+  * Show me the places I'm interested in
+  * Just the start point? No end point.
+  * This is a landmark cruising scenario - it's not for in depth traveling
+  * It's not that great if you want to really visit a place (e.g. Forbidden City)
+  * Maybe make it an app that chooses the routes for them, so that it's as easy as possible to use
+  * Make some lists that people can select automatically. It's too much work to sort through all the cards
+  * We can sell one day passes for this too
+
