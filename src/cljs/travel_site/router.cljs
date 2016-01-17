@@ -14,9 +14,8 @@
     (om/update!
       (-> app-state :journey :waypoint-attraction-ids)
       (reduce
-        #(assoc %1 %2 true)
-        {}
-        (map int(:waypoint-attraction-ids query-params)))))
+        #(assoc %1 %2 true) {}
+        (map int (:waypoint-attraction-ids query-params)))))
   (when (some? (:start-place query-params))
     (om/update!
       (-> app-state :journey :start-place)

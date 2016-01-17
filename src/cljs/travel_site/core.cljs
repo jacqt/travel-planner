@@ -9,7 +9,6 @@
             [travel-site.index :as index]
             [travel-site.models :as models]))
 
-
 (defn main []
   (router/route-app)
   (secretary/dispatch!

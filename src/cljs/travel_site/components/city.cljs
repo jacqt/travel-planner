@@ -106,8 +106,7 @@
                                                                :className "address-fields" ;; TODO - rename className -> class
                                                                :placeholder-text "End address"}])]
                 [:div {:class "ui red button go-button"
-                       :on-click #(animate-scroll-to-offset 550)
-                       }
+                       :on-click #(animate-scroll-to-offset 550)}
                  "Go"]]]
 
               ;; mobile and tablet - put the inputs on top of each other
@@ -284,6 +283,7 @@
              :travelMode (.. js/google -maps -TravelMode -DRIVING)}
         (fn [response status]
           (when (= status (.. js/google -maps -DirectionsStatus -OK))
+            ;; Spawn threads a thread for each waypoint, and then collect the results
             (let [response-channel (chan)
                   response (js->clj response :keywordize-keys true) ]
               (get-transit-directions response-channel response waypoints (om/get-state owner :google-directions-service))
@@ -310,7 +310,14 @@
       (js/google.maps.LatLngBounds.)
       markers)))
 
-(def throttled-update-journey-plan (util-funcs/throttle update-journey-plan 5000))
+(def throttled-update-journey-plan
+  (util-funcs/throttle
+    update-journey-plan
+    (fn [owner]
+      (let [{:keys [journey]} (om/get-props owner)]
+        (if (valid-journey? journey) ;; just a safety check
+          (* 500 (-> journey :waypoint-attraction-ids keys count)) ;; wait 400 ms per waypoint id
+          0)))))
 
 (defn attraction-map-view [[current-city journey transit-journey show-vehicle-icons] owner]
   (reify
@@ -326,7 +333,7 @@
                                 :overviewMapControl false
                                 :mapTypeControl false
                                 :minZoom 10
-                                :maxZoom 17
+                                :maxZoom 20
                                 :scrollwheel false
                                 :streetViewControl false
                                 :styles constants/map-style-arr
@@ -382,7 +389,9 @@
         (om/set-state! owner :google-directions-service google-directions-service))
       (if (valid-journey? journey)
         (throttled-update-journey-plan owner))
-      (.sticky (.find (js/$. (om/get-node owner)) ".stickied-map")))
+      (let [stickied-map (.find (js/$. (om/get-node owner)) ".stickied-map")]
+        (if (.is stickied-map ":visible")
+          (.sticky (.find (js/$. (om/get-node owner)) ".stickied-map")))))
 
     ;; A bit hacky, but register a listener on the root city component whose job is to sync
     ;; changes in the journey state to the url. Not sure of a better way to do it.

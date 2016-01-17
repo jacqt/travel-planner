@@ -5,6 +5,7 @@
             [cljs.pprint :refer [pprint]]
             [exicon.semantic-ui]
             [travel-site.router :as router]
+            [travel-site.utils.util-funcs :as util-funcs]
             [travel-site.utils.inputs :as inputs]
             [travel-site.utils.http :as http]
             [travel-site.models :as models]))
@@ -61,16 +62,22 @@
 
 (defn attraction-card-view [attraction owner]
   (reify
+    om/IInitState
+    (init-state [_]
+      {:on-click (util-funcs/throttle
+                   (fn [waypoint-attraction-ids]
+                     (.transition (js/$. (om/get-node owner)) "bounce")
+                     (if (attraction-selected? attraction waypoint-attraction-ids)
+                       (remove-waypoint attraction)
+                       (add-waypoint attraction)))
+                   1000)})
     om/IRenderState
     (render-state [this _]
       (let [waypoint-attraction-ids (om/observe owner (models/waypoint-attraction-ids))]
         (html [:div {:class "ui fluid centered card attraction-card-view"
                      :on-click #(do
-                                  (.transition (js/$. (om/get-node owner)) "bounce")
-                                  (if (attraction-selected? attraction waypoint-attraction-ids)
-                                    (remove-waypoint attraction)
-                                    (add-waypoint attraction)))
-                     }
+                                  ((:on-click (om/get-state owner)) waypoint-attraction-ids)
+                                  (.preventDefault %))}
                [:div {:class "image"
                       :style {:background-image (str "url( " (:image_url attraction) " )")}}]
                [:div {:class "content"}

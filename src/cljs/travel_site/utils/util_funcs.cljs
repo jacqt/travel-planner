@@ -8,7 +8,10 @@
       (loop []
         (let [request (<! f-reqs)]
           (apply f (:args request))
-          (<! (timeout debounce-length))
+          (js/console.log debounce-length)
+          (<! (timeout (if (fn? debounce-length)
+                         (apply debounce-length (:args request))
+                         debounce-length)))
           (recur))))
 
     (fn [& args]
