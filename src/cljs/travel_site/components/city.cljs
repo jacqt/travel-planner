@@ -153,7 +153,6 @@
                :transitOptions #js {:departureTime london-feb-5-2015-9am}
                :travelMode (.. js/google -maps -TravelMode -TRANSIT)}
           (fn [response status]
-            (js/console.log status)
             (put! response-channel {:leg-id leg-id
                                     :directions response}))))
       []
@@ -170,20 +169,47 @@
         nil
         prev-renderers))))
 
-(defn annotate-directions [start_name end_name waypoints all-directions]
-  (let [all-place-names (vec (flatten (vector start_name (map #(:name %) waypoints) end_name)))]
-    (sort #(compare (:leg-id %1) (:leg-id %2))
+(defn get-distance [waypoint origin]
+  (let [waypoint-coord (-> waypoint :location :coordinates)]
+    (apply + (map #(* (- %1 %2) (- %1 %2)) waypoint-coord [(:lng origin) (:lat origin)]))))
+
+(defn find-closest-waypoint [waypoints direction]
+  (let [origin (js->clj (.toJSON (aget (clj->js direction) "directions" "request" "origin"))
+                        :keywordize-keys true)]
+    (:waypoint
       (reduce
-        (fn [partial-directions next-direction]
-          (conj
-            partial-directions
-            {:start_name (get all-place-names (:leg-id next-direction))
-             :end_name (get all-place-names (inc (:leg-id next-direction)))
-             :leg-id (:leg-id next-direction)
-             :directions (js->clj (:directions next-direction) :keywordize-keys true)}
-            ))
-        []
-        all-directions))))
+        (fn [closest-waypoint next-waypoint]
+          (let [distance (get-distance next-waypoint origin)]
+            (if (< distance (:distance closest-waypoint))
+              {:waypoint next-waypoint
+               :distance distance}
+              closest-waypoint)))
+        {:waypoint (first waypoints)
+         :distance (get-distance (first waypoints) origin)}
+        (rest waypoints)))))
+
+(defn rearrange-waypoint-order [waypoints directions]
+  (reduce
+    (fn [new-waypoints direction]
+      (conj new-waypoints (find-closest-waypoint waypoints direction)))
+    []
+    (rest (sort #(compare (:leg-id %1) (:leg-id %2)) directions))))
+
+(defn annotate-directions [start_name end_name waypoints all-directions]
+  (let [waypoints (rearrange-waypoint-order waypoints all-directions)]
+    (let [all-place-names (vec (flatten (vector start_name (map #(:name %) waypoints) end_name)))]
+      (sort #(compare (:leg-id %1) (:leg-id %2))
+            (reduce
+              (fn [partial-directions next-direction]
+                (conj
+                  partial-directions
+                  {:start_name (get all-place-names (:leg-id next-direction))
+                   :end_name (get all-place-names (inc (:leg-id next-direction)))
+                   :leg-id (:leg-id next-direction)
+                   :directions (js->clj (:directions next-direction) :keywordize-keys true)}
+                  ))
+              []
+              all-directions)))))
 
 (defn make-transit-journey [waypoints journey all-directions]
   (annotate-directions

@@ -19,11 +19,17 @@
     (render [_]
       (html [:a {:class "ui large inverted button"
                  :href (str "#/city/" (:id city))}
-             (:city-name city)
+             (:name city)
              [:i {:class "ui angle right icon"}]]))))
 
 (defn dashboard-view [{:keys [cities credentials]} owner]
   (reify
+    om/IWillMount
+    (will-mount [_]
+      (http/get-all-cities
+        (fn [{:keys [data]}]
+          (om/update! cities data))))
+
     om/IRenderState
     (render-state [this _]
       (html [:div {:class "pusher"}
