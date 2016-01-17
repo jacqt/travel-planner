@@ -467,7 +467,7 @@
                    [:div {:class "ui text loader"} "Loading..."]]
                   (om/build attraction-map-view [current-city journey transit-journey false])
                   [:div {:class "ui basic centered segment"
-                         :on-click #(animate-scroll-to-element (js/$. ".final-directions"))}
+                         :on-click #(animate-scroll-to-element (js/$. ".final-directions-header"))}
                    [:a {:class "ui red button"} "Final Route" ]]]]]
 
                ;; Adjust the width depending on whether on a computer vs a tablet/mobile device
@@ -479,12 +479,17 @@
                                                             (-> current-city :attractions :data)])]]
 
               ;; Display the big map
-              [:div {:class "ui fourteen wide column row basic segment final-directions"}
-               [:div {:class "fourteen wide column"}
-                [:h1 "Final Route"]
-                (om/build attraction-map-view [current-city journey transit-journey true])
+              [:div {:class "ui fourteen wide column row final-directions-header"
+                     :style {:padding-bottom 0}}
+               [:h1 "Final directions"]]
+              [:div {:class "ui fourteen wide column row basic segment final-directions"
+                     :style {:margin-top 0}
+                     }
+               [:div {:class "three wide column"}
                 (if (valid-journey? journey)
-                  (om/build attraction-map-legend-view transit-journey))]]
+                  (om/build attraction-map-legend-view transit-journey)) ]
+               [:div {:class "eleven wide column"}
+                (om/build attraction-map-view [current-city journey transit-journey false])]]
 
               [:div {:class "ui fourteen wide column row basic segment final-transit-directions"}
                [:div {:class "fourteen wide column"}
