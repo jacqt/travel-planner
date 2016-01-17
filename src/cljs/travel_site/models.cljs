@@ -6,6 +6,7 @@
 (enable-console-print!)
 (defonce app-state (atom {:credentials (auth/get-credentials)
                           :route "home"
+                          :temporary-state {:is-loading false}
                           :current-city {:name "London"
                                          :city-center {:lat 0
                                                        :lng 0}
@@ -37,3 +38,6 @@
 
 (defn transit-journey []
   (om/ref-cursor (:transit-journey (om/root-cursor app-state))))
+
+(defn temporary-state []
+  (om/ref-cursor (:temporary-state (om/root-cursor app-state))))

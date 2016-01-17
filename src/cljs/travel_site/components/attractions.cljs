@@ -10,6 +10,12 @@
             [travel-site.utils.http :as http]
             [travel-site.models :as models]))
 
+(defn trigger-loading-animation [temporary-state]
+  (om/update! temporary-state :is-loading true))
+
+(defn stop-loading-animation [temporary-state]
+  (om/update! temporary-state :is-loading false))
+
 (defn attraction-selected? [attraction waypoint-attraction-ids]
   (contains? waypoint-attraction-ids (:id attraction)))
 
@@ -65,19 +71,22 @@
     om/IInitState
     (init-state [_]
       {:on-click (util-funcs/throttle
-                   (fn [waypoint-attraction-ids]
+                   (fn [waypoint-attraction-ids temporary-state]
+                     (trigger-loading-animation temporary-state)
                      (.transition (js/$. (om/get-node owner)) "bounce")
                      (if (attraction-selected? attraction waypoint-attraction-ids)
                        (remove-waypoint attraction)
                        (add-waypoint attraction)))
                    1000)})
+
     om/IRenderState
-    (render-state [this _]
-      (let [waypoint-attraction-ids (om/observe owner (models/waypoint-attraction-ids))]
+    (render-state [this state]
+      (let [waypoint-attraction-ids (om/observe owner (models/waypoint-attraction-ids))
+            temporary-state (om/observe owner (models/temporary-state))]
         (html [:div {:class "ui fluid centered card attraction-card-view"
-                     :on-click #(do
-                                  ((:on-click (om/get-state owner)) waypoint-attraction-ids)
-                                  (.preventDefault %))}
+                     :on-click #((:on-click state)
+                                   waypoint-attraction-ids
+                                   temporary-state)}
                [:div {:class "image"
                       :style {:background-image (str "url( " (:image_url attraction) " )")}}]
                [:div {:class "content"}

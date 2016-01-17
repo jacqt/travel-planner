@@ -18,6 +18,9 @@
 (def widths (flatten (repeat [6.0 4.0])))
 (def london-feb-5-2015-9am (js/Date. 2015 1 5 9 0 0 0))
 
+(defn is-loading? [temporary-state]
+  (:is-loading temporary-state))
+
 (defn animate-scroll-to-offset [scroll-offset]
   (-> "html, body" js/$. (.animate #js {:scrollTop scroll-offset})))
 
@@ -150,6 +153,7 @@
                :transitOptions #js {:departureTime london-feb-5-2015-9am}
                :travelMode (.. js/google -maps -TravelMode -TRANSIT)}
           (fn [response status]
+            (js/console.log status)
             (put! response-channel {:leg-id leg-id
                                     :directions response}))))
       []
@@ -269,7 +273,8 @@
   (and (not (empty? (-> journey :start-place :coords))) (not (empty? (-> journey :end-place :coords)))))
 
 (defn update-journey-plan [owner]
-  (let [{:keys [current-city journey transit-journey]} (om/get-props owner)
+  (let [temporary-state (om/observe owner (models/temporary-state))
+        {:keys [current-city journey transit-journey]} (om/get-props owner)
         waypoints (attractions/get-waypoints
                     (-> journey :waypoint-attraction-ids)
                     (-> current-city :attractions :data))]
@@ -295,7 +300,8 @@
                     (do
                       (om/update!
                         transit-journey
-                        (make-transit-journey waypoints journey partial-directions)))))))))))))
+                        (make-transit-journey waypoints journey partial-directions))
+                      (attractions/stop-loading-animation temporary-state))))))))))))
 
 (defn fit-map-to-markers [google-map markers]
   (.fitBounds
@@ -316,7 +322,7 @@
     (fn [owner]
       (let [{:keys [journey]} (om/get-props owner)]
         (if (valid-journey? journey) ;; just a safety check
-          (* 500 (-> journey :waypoint-attraction-ids keys count)) ;; wait 400 ms per waypoint id
+          (* 2000 (-> journey :waypoint-attraction-ids keys count)) ;; wait 400 ms per waypoint id
           0)))))
 
 (defn attraction-map-view [[current-city journey transit-journey show-vehicle-icons] owner]
@@ -332,7 +338,7 @@
                            #js {:center google-city-center
                                 :overviewMapControl false
                                 :mapTypeControl false
-                                :minZoom 10
+                                :minZoom 8
                                 :maxZoom 20
                                 :scrollwheel false
                                 :streetViewControl false
@@ -376,12 +382,13 @@
                [:thead
                 [:th "Symbol"]
                 [:th "Name"]]
-               (map #(html [:tr
-                            [:td (get % 0)]
-                            [:td (get % 1)]])
-                    legend-tuples)])))))
+               [:tbody
+                (map #(html [:tr
+                             [:td (get % 0)]
+                             [:td (get % 1)]])
+                     legend-tuples)]])))))
 
-(defn city-view [{:keys [current-city journey transit-journey]} owner]
+(defn city-view [{:keys [current-city journey transit-journey temporary-state]} owner]
   (reify
     om/IDidMount
     (did-mount [_]
@@ -430,6 +437,8 @@
                 [:div {:class "ui padded basic sticky stickied-map segment"}
                  [:div {:class "ui segment preview-directions"}
                   [:h3 "Route preview"]
+                  [:div {:class (str "ui inverted dimmer " (if (is-loading? temporary-state) "active"))}
+                   [:div {:class "ui text loader"} "Loading..."]]
                   (om/build attraction-map-view [current-city journey transit-journey false])
                   [:div {:class "ui basic centered segment"
                          :on-click #(animate-scroll-to-element (js/$. ".final-directions"))}
