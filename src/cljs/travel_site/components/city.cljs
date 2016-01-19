@@ -95,9 +95,20 @@
       (html [:div {:class "ui segment transit-view"}
              (om/build-all transit-directions-view transit-journey) ]))))
 
+(defn place-filled-out? [place]
+ (not (empty? (:coords place))))
+
 ;; View to edit the current journey (i.e. change start/end locations and remove existing waypoints)
 (defn attractions-selector-view [[current-city journey transit-journey] owner]
   (reify
+    om/IDidUpdate
+    (did-update [_ [_ prev-journey _] _]
+      (let [[_ journey _] (om/get-props owner)]
+        (when (and (place-filled-out? (:start-place journey))
+                   (not (place-filled-out? (:end-place journey))))
+          (js/console.log (:end-place journey))
+          (om/update! (:end-place journey) (:start-place @journey)))))
+
     om/IRender
     (render [_]
       (html [:div {:class "ui basic segment fourteen wide attractions-selector-view"}
@@ -110,13 +121,13 @@
                  (om/build inputs/address-autocomplete-input [(-> journey :start-place)
                                                               {:edit-key :address
                                                                :coords-key :coords
-                                                               :className "address-fields" ;;TODO - rename className -> class
+                                                               :className "address-fields"
                                                                :placeholder-text "Start address"}])]
                 [:div {:class "ui fluid input address-input"}
                  (om/build inputs/address-autocomplete-input [(-> journey :end-place)
                                                               {:edit-key :address
                                                                :coords-key :coords
-                                                               :className "address-fields" ;; TODO - rename className -> class
+                                                               :className "address-fields"
                                                                :placeholder-text "End address"}])]
                 [:div {:class "ui red button go-button"
                        :on-click #(animate-scroll-to-offset 550)}
@@ -129,14 +140,14 @@
                  (om/build inputs/address-autocomplete-input [(-> journey :start-place)
                                                               {:edit-key :address
                                                                :coords-key :coords
-                                                               :className "address-fields" ;;TODO - rename className -> class
+                                                               :className "address-fields"
                                                                :placeholder-text "Start address"}])]]
                 [:div {:class "sixteen wide field"}
                  [:div {:class "ui fluid input address-input"}
                   (om/build inputs/address-autocomplete-input [(-> journey :end-place)
                                                                {:edit-key :address
                                                                 :coords-key :coords
-                                                                :className "address-fields" ;; TODO - rename className -> class
+                                                                :className "address-fields"
                                                                 :placeholder-text "End address"}])]]]]]))))
 
 
