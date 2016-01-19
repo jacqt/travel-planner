@@ -14,9 +14,9 @@
                                          :attraction-categories []
                                          :attractions []}
                           :journey {:start-place {:address ""
-                                                       :coords {}}
+                                                  :coords {}}
                                     :end-place {:address ""
-                                                     :coords {}}
+                                                :coords {}}
                                     :waypoint-attraction-ids {}}
                           :transit-journey {}
                           :cities [{:city-name "London"

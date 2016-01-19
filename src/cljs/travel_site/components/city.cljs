@@ -4,6 +4,8 @@
             [sablono.core :as html :refer-macros [html]]
             [cljs.core.async :refer [put! chan <!]]
             [cljs.pprint :refer [pprint]]
+            [goog.string :as gstring]
+            [goog.string.format]
             [travel-site.components.navbar :as navbar]
             [travel-site.router :as router]
             [travel-site.utils.inputs :as inputs]
@@ -43,6 +45,13 @@
 (defn get-end-location [transit-directions]
   (-> transit-directions :directions :routes (get 0) :legs (get 0) :end_location))
 
+(defn extend-duration-with-step [orig-length step]
+  (-> step :duration :value (+ orig-length)))
+
+(defn length-of-directions [direction]
+  (let [num-seconds (reduce extend-duration-with-step 0 (:steps direction))]
+    (str (gstring/format "%.0f" (/ num-seconds 60)) " minutes")))
+
 (defn transit-step-view [transit-step owner]
   (reify
     om/IRender
@@ -74,7 +83,8 @@
                [:div {:class "ui header transit-directions-header"}
                 [:div {:class "content"}
                  (:start_name transit-directions)
-                 [:div {:class "sub header"} (:end_name transit-directions)]]]
+                 [:div {:class "sub header"}
+                  (:end_name transit-directions) " - " (length-of-directions directions)]]]
                [:ul {:class "transit-steps"}
                 (om/build-all transit-step-view (:steps directions))]])))))
 
@@ -348,7 +358,7 @@
     (fn [owner]
       (let [{:keys [journey]} (om/get-props owner)]
         (if (valid-journey? journey) ;; just a safety check
-          (* 2000 (-> journey :waypoint-attraction-ids keys count)) ;; wait 400 ms per waypoint id
+          (* 2000 (-> journey :waypoint-attraction-ids keys count)) ;; wait 2000 ms per waypoint id
           0)))))
 
 (defn attraction-map-view [[current-city journey transit-journey show-vehicle-icons] owner]
@@ -440,9 +450,15 @@
         (router/go-to-hash
           (http/encode-url-parameters
             (str "/city/" (-> current-city :city :data :id))
-            {"start-place" (js/JSON.stringify (clj->js (-> journey :start-place)))
-             "end-place" (js/JSON.stringify (clj->js (-> journey :end-place)))
-             "waypoint-attraction-ids[]" (clj->js (-> journey :waypoint-attraction-ids keys))}))))
+            (merge (if-not (empty? (-> journey :start-place :coords))
+                     {"start-addr" (-> journey :start-place :address)
+                      "start-lat" (gstring/format "%.6f" (-> journey :start-place :coords :lat))
+                      "start-lng" (gstring/format "%.6f" (-> journey :start-place :coords :lng))})
+                   (if-not (empty? (-> journey :end-place :coords))
+                     {"end-addr" (-> journey :end-place :address)
+                      "end-lat" (gstring/format "%.6f" (-> journey :end-place :coords :lat))
+                      "end-lng" (gstring/format "%.6f" (-> journey :end-place :coords :lng))})
+                   { "wp-ids[]" (clj->js (-> journey :waypoint-attraction-ids keys))})))))
 
     om/IRenderState
     (render-state [this _]

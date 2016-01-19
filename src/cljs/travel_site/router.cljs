@@ -10,20 +10,24 @@
 
 ;; TODO remove code duplication here
 (defn process-query-params [app-state query-params]
-  (when (some? (:waypoint-attraction-ids query-params))
+  (when (some? (:wp-ids query-params))
     (om/update!
       (-> app-state :journey :waypoint-attraction-ids)
       (reduce
         #(assoc %1 %2 true) {}
-        (map int (:waypoint-attraction-ids query-params)))))
-  (when (some? (:start-place query-params))
+        (map int (:wp-ids query-params)))))
+  (when (some? (:start-addr query-params))
     (om/update!
       (-> app-state :journey :start-place)
-      (js->clj (js/JSON.parse (:start-place query-params)) :keywordize-keys true)))
-  (when (some? (:end-place query-params))
+      {:address (:start-addr query-params)
+       :coords {:lat (js/parseFloat (:start-lat query-params))
+                :lng (js/parseFloat (:start-lng query-params))}}))
+  (when (some? (:end-addr query-params))
     (om/update!
       (-> app-state :journey :end-place)
-      (js->clj (js/JSON.parse (:end-place query-params)) :keywordize-keys true))))
+      {:address (:end-addr query-params)
+       :coords {:lat (js/parseFloat (:end-lat query-params))
+                :lng (js/parseFloat (:end-lng query-params))}})))
 
 (defn go-to-hash [new-hash]
   (aset js/window.location "hash" new-hash))
