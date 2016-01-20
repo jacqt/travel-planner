@@ -38,13 +38,15 @@
 
 ;; Generic component for using google places autocomplete input
 ;; Same API as the editable-input component above
-(defn address-autocomplete-input [[parent-state {:keys [className edit-key placeholder-text coords-key]}] owner] 
+(defn address-autocomplete-input [[parent-state {:keys [className edit-key placeholder-text coords-key center]}] owner]
   {:pre [(some? parent-state)]}
   (reify
     om/IDidMount
     (did-mount [_]
       (let [address-input (om/get-node owner)]
-        (let [autocomplete (js/google.maps.places.Autocomplete. address-input)]
+        (let [autocomplete (js/google.maps.places.Autocomplete.
+                             address-input
+                             #js  {:bounds  (if (some? center) (js/google.maps.LatLngBounds. center center))})]
           (.addListener
             autocomplete
             "place_changed"

@@ -36,6 +36,7 @@
     []
     map-over))
 
+
 (defn geojson->goog-latlng [[lng lat]]
   (js/google.maps.LatLng. lat lng))
 
@@ -47,6 +48,9 @@
 
 (defn extend-duration-with-step [orig-length step]
   (-> step :duration :value (+ orig-length)))
+
+(defn get-center [city]
+  (geojson->goog-latlng (-> city :city :data :center :coordinates)))
 
 (defn length-of-directions [direction]
   (let [num-seconds (reduce extend-duration-with-step 0 (:steps direction))]
@@ -121,12 +125,14 @@
                  (om/build inputs/address-autocomplete-input [(-> journey :start-place)
                                                               {:edit-key :address
                                                                :coords-key :coords
+                                                               :center (get-center current-city)
                                                                :className "address-fields"
                                                                :placeholder-text "Start address"}])]
                 [:div {:class "ui fluid input address-input"}
                  (om/build inputs/address-autocomplete-input [(-> journey :end-place)
                                                               {:edit-key :address
                                                                :coords-key :coords
+                                                               :center (get-center current-city)
                                                                :className "address-fields"
                                                                :placeholder-text "End address"}])]
                 [:div {:class "ui red button go-button"
@@ -140,6 +146,7 @@
                  (om/build inputs/address-autocomplete-input [(-> journey :start-place)
                                                               {:edit-key :address
                                                                :coords-key :coords
+                                                               :center (get-center current-city)
                                                                :className "address-fields"
                                                                :placeholder-text "Start address"}])]]
                 [:div {:class "sixteen wide field"}
@@ -147,6 +154,7 @@
                   (om/build inputs/address-autocomplete-input [(-> journey :end-place)
                                                                {:edit-key :address
                                                                 :coords-key :coords
+                                                                :center (get-center current-city)
                                                                 :className "address-fields"
                                                                 :placeholder-text "End address"}])]]]]]))))
 
@@ -379,7 +387,7 @@
     (did-mount [_]
       (let [google-map-container (om/get-node owner)
             google-directions-service (js/google.maps.DirectionsService.)
-            google-city-center (geojson->goog-latlng (-> current-city :city :data :center :coordinates))]
+            google-city-center (get-center current-city)]
         (let [google-map (js/google.maps.Map.
                            google-map-container
                            #js {:center google-city-center
